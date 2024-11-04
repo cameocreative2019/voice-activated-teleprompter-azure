@@ -9,7 +9,9 @@ lerna-debug.log*
 
 node_modules
 *.local
-/api/node_modules/
+api/node_modules/
+api/dist
+.oryx_prod_node_modules/
 
 
 

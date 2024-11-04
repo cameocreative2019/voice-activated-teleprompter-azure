@@ -1,17 +1,26 @@
 {
   "compilerOptions": {
     "module": "commonjs",
-    "target": "es6",
+    "target": "es2020",
     "outDir": "dist",
     "rootDir": ".",
     "sourceMap": true,
     "strict": true,
-    "types": ["@azure/functions", "node"]
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node", "@azure/functions"],
+    "lib": ["es2020"],
+    "resolveJsonModule": true
   },
   "include": [
-    "get-speech-token/index.ts"
+    "**/*.ts"
   ],
   "exclude": [
-    "node_modules"
-  ]
+    "node_modules",
+    "dist",
+    "local.settings.json"
+  ],
+  "compileOnSave": true
 }

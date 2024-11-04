@@ -20,6 +20,26 @@ jobs:
       - name: Set NODE_ENV to Production
         run: echo "NODE_ENV=production" >> $GITHUB_ENV
 
+      # Add debugging steps before build
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+          cd api && npm ci
+
+      - name: Debug - List Current Directory
+        run: |
+          echo "Current directory contents:"
+          ls -la
+          echo "Node modules size:"
+          du -sh node_modules
+          echo "API node modules size:"
+          du -sh api/node_modules
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -35,18 +55,21 @@ jobs:
           api_artifact_location: "dist"
           skip_api_build: false
 
-      # Add step to count files and check size in dist and .oryx_prod_node_modules
-      - name: Count Files and Check Directory Size
+      # Add post-build debugging
+      - name: Debug - Check Build Output
+        if: always()
         run: |
-          echo "File count in dist:"
-          find /github/workspace/dist -type f | wc -l
+          echo "Dist directory contents:"
+          ls -la dist || echo "dist directory not found"
           
-          echo "File count in .oryx_prod_node_modules:"
-          find /github/workspace/api/.oryx_prod_node_modules -type f | wc -l
+          echo "Dist directory size:"
+          du -sh dist || echo "dist directory not found"
           
-          echo "Directory size summary:"
-          du -h -d 1 /github/workspace/dist
-          du -h -d 1 /github/workspace/api/.oryx_prod_node_modules
+          echo "Number of files in dist:"
+          find dist -type f | wc -l || echo "dist directory not found"
+          
+          echo "API dist directory contents:"
+          ls -la api/dist || echo "api/dist directory not found"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
