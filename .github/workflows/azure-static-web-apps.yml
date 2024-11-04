@@ -16,6 +16,10 @@ jobs:
     name: Build and Deploy Job
     steps:
       - uses: actions/checkout@v4
+
+      - name: Set NODE_ENV to Production
+        run: echo "NODE_ENV=production" >> $GITHUB_ENV
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -28,8 +32,11 @@ jobs:
           output_location: "dist"
           app_build_command: "npm run build"
           api_build_command: "npm run build"
-          api_artifact_location: "dist" # Specify where your API build outputs to
+          api_artifact_location: "dist"
           skip_api_build: false
+
+      - name: Check .oryx_prod_node_modules Directory Size
+        run: du -h -d 1 /github/workspace/api/.oryx_prod_node_modules || echo "Directory not found"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
