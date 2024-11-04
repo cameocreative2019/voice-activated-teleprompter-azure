@@ -1,7 +1,7 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
 import { createAppSlice } from "../../app/createAppSlice"
 import { type TextElement, tokenize } from "../../lib/word-tokenizer"
-import { toggleEdit } from "../navbar/navbarSlice"
+import { toggleQuickEdit, toggleEditor } from "../navbar/navbarSlice"
 
 export interface ContentSliceState {
   rawText: string
@@ -10,7 +10,13 @@ export interface ContentSliceState {
   interimTranscriptIndex: number
 }
 
-const initialText = 'Click on the "Edit" button and paste your content here...'
+// Try to get the saved content from localStorage, fall back to default if none exists
+const getSavedContent = () => {
+  const savedContent = localStorage.getItem('scriptContent')
+  return savedContent || 'Click on the Editor button and paste your content here...'
+}
+
+const initialText = getSavedContent()
 
 const initialState: ContentSliceState = {
   rawText: initialText,
@@ -22,15 +28,24 @@ const initialState: ContentSliceState = {
 export const contentSlice = createAppSlice({
   name: "content",
 
-  // `createSlice` will infer the state type from the `initialState` argument
   initialState,
 
-  // The `reducers` field lets us define reducers and generate associated actions
   reducers: create => ({
     setContent: create.reducer((state, action: PayloadAction<string>) => {
       state.rawText = action.payload
       state.finalTranscriptIndex = -1
       state.interimTranscriptIndex = -1
+      // Save to localStorage whenever content changes
+      localStorage.setItem('scriptContent', action.payload)
+    }),
+
+    clearContent: create.reducer(state => {
+      const defaultText = 'Click on the Editor button and paste your content here...'
+      state.rawText = defaultText
+      state.textElements = tokenize(defaultText)
+      state.finalTranscriptIndex = -1
+      state.interimTranscriptIndex = -1
+      localStorage.removeItem('scriptContent')
     }),
 
     setFinalTranscriptIndex: create.reducer(
@@ -52,9 +67,13 @@ export const contentSlice = createAppSlice({
   }),
 
   extraReducers: builder =>
-    builder.addCase(toggleEdit, state => {
-      state.textElements = tokenize(state.rawText)
-    }),
+    builder
+      .addCase(toggleQuickEdit, state => {
+        state.textElements = tokenize(state.rawText)
+      })
+      .addCase(toggleEditor, state => {
+        state.textElements = tokenize(state.rawText)
+      }),
 
   selectors: {
     selectRawText: state => state.rawText,
@@ -66,6 +85,7 @@ export const contentSlice = createAppSlice({
 
 export const {
   setContent,
+  clearContent, // Added clearContent to exports
   setFinalTranscriptIndex,
   setInterimTranscriptIndex,
   resetTranscriptionIndices,

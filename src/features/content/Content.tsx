@@ -1,7 +1,8 @@
-import { useEffect, useRef } from "react"
+import { useEffect, useRef, useLayoutEffect } from "react"
 import { escape } from "html-escaper"
 import { useAppDispatch, useAppSelector } from "../../app/hooks"
 import { setContent, setFinalTranscriptIndex, setInterimTranscriptIndex } from "./contentSlice"
+import { selectSavedPosition, setSavedPosition } from "../scroll/scrollSlice"
 
 import {
   selectStatus,
@@ -10,6 +11,7 @@ import {
   selectFontSize,
   selectMargin,
   selectOpacity,
+  selectReadLinePosition,
 } from "../navbar/navbarSlice"
 
 import {
@@ -26,55 +28,221 @@ export const Content = () => {
   const fontSize = useAppSelector(selectFontSize)
   const margin = useAppSelector(selectMargin)
   const opacity = useAppSelector(selectOpacity)
+  const readLinePosition = useAppSelector(selectReadLinePosition)
   const horizontallyFlipped = useAppSelector(selectHorizontallyFlipped)
   const verticallyFlipped = useAppSelector(selectVerticallyFlipped)
   const rawText = useAppSelector(selectRawText)
   const textElements = useAppSelector(selectTextElements)
   const finalTranscriptIndex = useAppSelector(selectFinalTranscriptIndex)
   const interimTranscriptIndex = useAppSelector(selectInterimTranscriptIndex)
+  const savedPosition = useAppSelector(selectSavedPosition)
 
-  const style = {
-    fontSize: `${fontSize}px`,
-    padding: `0 ${margin}px`,
-  }
+  const containerRef = useRef<HTMLDivElement>(null)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
+  const lastRef = useRef<HTMLDivElement>(null)
+  const lastInterimIndex = useRef<number>(-1)
+  const prevFontSizeRef = useRef(fontSize)
+  const prevReadLineRef = useRef(readLinePosition)
+  const isInitializedRef = useRef(false)
+  const prevStatusRef = useRef(status)
+  const wasAtTopRef = useRef(true)
 
-  const containerRef = useRef<null | HTMLDivElement>(null)
-  const lastRef = useRef<null | HTMLDivElement>(null)
+  // Calculate padding based on container height and read line position
+  const calculatePadding = (containerHeight: number) => {
+    if (status === "editorMode") {
+      const topPadding = containerHeight * 0.1;
+      return {
+        top: topPadding,
+        bottom: containerHeight * 0.1
+      };
+    }
 
+    // For non-editor modes
+    const readLinePixels = containerHeight * (readLinePosition / 100);
+    return {
+      top: containerHeight * 0.1,  // 10% top padding for non-editor modes
+      bottom: readLinePixels
+    };
+  };
+
+  // Get complete styles including margins
+  const getStyles = () => {
+    const baseStyles = {
+      fontSize: `${fontSize}px`,
+      paddingLeft: `${margin}px`,
+      paddingRight: `${margin}px`,
+    };
+
+    if (status === "editing" || status === "editorMode") {
+      return baseStyles;
+    }
+
+    return {
+      ...baseStyles,
+      opacity: opacity / 100,
+      transform: `scale(${horizontallyFlipped ? "-1" : "1"}, ${verticallyFlipped ? "-1" : "1"})`,
+    };
+  };
+
+  // Set initial padding
   useEffect(() => {
-    if (containerRef.current) {
-      if (lastRef.current) {
-        containerRef.current.scrollTo({
-          top: lastRef.current.offsetTop - 100,
-          behavior: "smooth",
-        })
-      } else {
-        containerRef.current.scrollTo({
-          top: 0,
-          behavior: "smooth",
-        })
+    const currentElement = status === "editing" || status === "editorMode"
+      ? textareaRef.current
+      : containerRef.current;
+
+    if (currentElement) {
+      const containerHeight = currentElement.clientHeight;
+      const { top, bottom } = calculatePadding(containerHeight);
+
+      currentElement.style.paddingTop = `${top}px`;
+      currentElement.style.paddingBottom = `${bottom}px`;
+    }
+  }, []); // Empty dependency array means this runs once on mount
+
+  // Initialize wasAtTop state
+  useLayoutEffect(() => {
+    if (!isInitializedRef.current) {
+      const currentElement = status === "editing" || status === "editorMode"
+        ? textareaRef.current
+        : containerRef.current;
+
+      if (currentElement) {
+        wasAtTopRef.current = currentElement.scrollTop === 0;
+        isInitializedRef.current = true;
       }
     }
-  })
+  }, [status]);
+
+  // Track scroll position continuously
+  useEffect(() => {
+    const handleScroll = (e: Event) => {
+      const target = e.target as HTMLElement;
+      if (target.scrollTop !== savedPosition) {
+        dispatch(setSavedPosition(target.scrollTop));
+        wasAtTopRef.current = target.scrollTop === 0;
+      }
+    };
+
+    const currentElement = status === "editing" || status === "editorMode"
+      ? textareaRef.current
+      : containerRef.current;
+
+    currentElement?.addEventListener('scroll', handleScroll);
+
+    return () => {
+      currentElement?.removeEventListener('scroll', handleScroll);
+    };
+  }, [status, dispatch, savedPosition]);
+
+  // Handle mode changes and restore scroll position
+  useEffect(() => {
+    if (status !== prevStatusRef.current) {
+      const currentElement = status === "editing" || status === "editorMode"
+        ? textareaRef.current
+        : containerRef.current;
+
+      if (currentElement) {
+        const containerHeight = currentElement.clientHeight;
+        const { top, bottom } = calculatePadding(containerHeight);
+        const isLeavingEditorMode = prevStatusRef.current === "editorMode" && status !== "editorMode";
+
+        // Apply appropriate padding based on mode
+        if (status === "editorMode") {
+          currentElement.style.paddingTop = `${top}px`;
+          currentElement.style.paddingBottom = `${bottom}px`;
+        } else {
+          // For non-editor modes, apply the new top padding
+          currentElement.style.paddingTop = `${top}px`;
+          currentElement.style.paddingBottom = `${bottom}px`;
+        }
+
+        // Use requestAnimationFrame to ensure the DOM has updated
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            if (isLeavingEditorMode && wasAtTopRef.current) {
+              currentElement.scrollTop = 0;
+            } else if (savedPosition > 0) {
+              currentElement.scrollTop = savedPosition;
+            }
+          });
+        });
+      }
+
+      prevStatusRef.current = status;
+    }
+  }, [status, savedPosition, readLinePosition]);
+
+  // Handle read line position changes
+  useEffect(() => {
+    if (prevReadLineRef.current !== readLinePosition) {
+      const currentElement = status === "editing" || status === "editorMode"
+        ? textareaRef.current
+        : containerRef.current;
+
+      if (currentElement) {
+        const containerHeight = currentElement.clientHeight;
+        const { top, bottom } = calculatePadding(containerHeight);
+
+        // Maintain appropriate padding for current mode
+        currentElement.style.paddingTop = `${top}px`;
+        currentElement.style.paddingBottom = `${bottom}px`;
+
+        // Calculate new scroll position to maintain text position relative to read line
+        const currentScrollTop = currentElement.scrollTop;
+        const currentReadLinePosition = containerHeight * (prevReadLineRef.current / 100);
+        const newReadLinePosition = containerHeight * (readLinePosition / 100);
+        const scrollAdjustment = newReadLinePosition - currentReadLinePosition;
+
+        // Apply new scroll position with smooth animation
+        currentElement.scrollTo({
+          top: currentScrollTop + scrollAdjustment,
+          behavior: 'smooth'
+        });
+
+        prevReadLineRef.current = readLinePosition;
+      }
+    }
+  }, [readLinePosition, status]);
+
+  // Handle scroll in started mode
+  useEffect(() => {
+    if (status === "started" && containerRef.current && lastRef.current) {
+      if (interimTranscriptIndex !== lastInterimIndex.current) {
+        const container = containerRef.current;
+        const containerHeight = container.clientHeight;
+        const readLineOffset = containerHeight * ((100 - readLinePosition) / 100);
+        const targetPosition = lastRef.current.offsetTop - readLineOffset;
+
+        // Only update bottom padding
+        const { bottom } = calculatePadding(containerHeight);
+        container.style.paddingBottom = `${bottom}px`;
+
+        container.scrollTo({
+          top: targetPosition,
+          behavior: "smooth",
+        });
+
+        lastInterimIndex.current = interimTranscriptIndex;
+      }
+    }
+  }, [interimTranscriptIndex, readLinePosition, status]);
 
   return (
     <main className="content-area">
-      {status === "editing" ? (
+      {(status === "editing" || status === "editorMode") ? (
         <textarea
-          className="content"
-          style={style}
+          ref={textareaRef}
+          className={`content ${status === "editorMode" ? "editor-mode" : ""}`}
+          style={getStyles()}
           value={rawText}
           onChange={e => dispatch(setContent(e.target.value || ""))}
+          spellCheck={false}
         />
       ) : (
         <div
           className="content"
           ref={containerRef}
-          style={{
-            ...style,
-            opacity: opacity / 100,
-            transform: `scale(${horizontallyFlipped ? "-1" : "1"}, ${verticallyFlipped ? "-1" : "1"})`,
-          }}
+          style={getStyles()}
         >
           {textElements.map((textElement, index, array) => {
             const itemProps =
@@ -86,18 +254,18 @@ export const Content = () => {
               <span
                 key={textElement.index}
                 onClick={() => {
-                  dispatch(setFinalTranscriptIndex(index - 1))
-                  dispatch(setInterimTranscriptIndex(index - 1))
+                  dispatch(setFinalTranscriptIndex(index))
+                  dispatch(setInterimTranscriptIndex(index))
                 }}
                 className={
-                  finalTranscriptIndex > 0 &&
-                  textElement.index <= finalTranscriptIndex + 1
-                    ? "final-transcript"
-                    : interimTranscriptIndex > 0 &&
-                        textElement.index <= interimTranscriptIndex + 1
-                      ? "interim-transcript"
-                      : "has-text-white"
-                }
+  finalTranscriptIndex > 0 &&
+  textElement.index < finalTranscriptIndex  // Changed to < instead of <=
+    ? "final-transcript"
+    : interimTranscriptIndex > 0 &&
+        textElement.index <= interimTranscriptIndex + 1
+      ? "interim-transcript"
+      : "has-text-white"
+}
                 {...itemProps}
                 dangerouslySetInnerHTML={{
                   __html: escape(textElement.value).replace(/\n/g, "<br>"),

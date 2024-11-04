@@ -1,33 +1,78 @@
 import type { PayloadAction } from "@reduxjs/toolkit"
 import { createAppSlice } from "../../app/createAppSlice"
 
+interface SavedSettings {
+  fontSize: number
+  margin: number
+  readLinePosition: number
+}
+
 export interface NavBarSliceState {
-  status: "editing" | "started" | "stopped"
+  status: "editing" | "editorMode" | "started" | "stopped"
+  showSettings: boolean
   horizontallyFlipped: boolean
   verticallyFlipped: boolean
   fontSize: number
   margin: number
   opacity: number
+  readLinePosition: number
+  savedSettings: SavedSettings | null
+  showTimeoutWarning: boolean
+  timeoutCountdown: number | null
+  lastProgressTimestamp: number | null
 }
+
+// Get settings from localStorage or use defaults
+const getSavedSettings = () => {
+  const savedSettings = localStorage.getItem('appSettings')
+  if (savedSettings) {
+    return JSON.parse(savedSettings)
+  }
+  return {
+    fontSize: 115,
+    margin: 350,
+    opacity: 100,
+    readLinePosition: 90,
+    horizontallyFlipped: false,
+    verticallyFlipped: false
+  }
+}
+
+const defaultSettings = getSavedSettings()
 
 const initialState: NavBarSliceState = {
   status: "stopped",
-  horizontallyFlipped: false,
-  verticallyFlipped: false,
-  fontSize: 30,
-  margin: 10,
-  opacity: 80,
+  showSettings: false,
+  horizontallyFlipped: defaultSettings.horizontallyFlipped,
+  verticallyFlipped: defaultSettings.verticallyFlipped,
+  fontSize: defaultSettings.fontSize,
+  margin: defaultSettings.margin,
+  opacity: defaultSettings.opacity,
+  readLinePosition: defaultSettings.readLinePosition,
+  savedSettings: null,
+  showTimeoutWarning: false,
+  timeoutCountdown: null,
+  lastProgressTimestamp: null,
+}
+
+// Helper function to save settings to localStorage
+const saveSettingsToStorage = (state: NavBarSliceState) => {
+  const settingsToSave = {
+    fontSize: state.fontSize,
+    margin: state.margin,
+    opacity: state.opacity,
+    readLinePosition: state.readLinePosition,
+    horizontallyFlipped: state.horizontallyFlipped,
+    verticallyFlipped: state.verticallyFlipped
+  }
+  localStorage.setItem('appSettings', JSON.stringify(settingsToSave))
 }
 
 export const navbarSlice = createAppSlice({
   name: "navbar",
-
-  // `createSlice` will infer the state type from the `initialState` argument
   initialState,
-
-  // The `reducers` field lets us define reducers and generate associated actions
   reducers: create => ({
-    toggleEdit: create.reducer(state => {
+    toggleQuickEdit: create.reducer(state => {
       if (state.status === "editing") {
         state.status = "stopped"
       } else {
@@ -35,48 +80,136 @@ export const navbarSlice = createAppSlice({
       }
     }),
 
+    toggleEditor: create.reducer(state => {
+      if (state.status === "editorMode") {
+        // Restore previous settings
+        if (state.savedSettings) {
+          state.fontSize = state.savedSettings.fontSize
+          state.margin = state.savedSettings.margin
+          state.readLinePosition = state.savedSettings.readLinePosition
+          state.savedSettings = null
+        }
+        state.status = "stopped"
+      } else {
+        // Save current settings
+        state.savedSettings = {
+          fontSize: state.fontSize,
+          margin: state.margin,
+          readLinePosition: state.readLinePosition,
+        }
+        // Apply editor settings
+        state.fontSize = 25
+        state.margin = 370
+        state.readLinePosition = 10
+        state.status = "editorMode"
+      }
+      saveSettingsToStorage(state)
+    }),
+
+    toggleSettings: create.reducer(state => {
+      state.showSettings = !state.showSettings
+    }),
+
     start: create.reducer(state => {
       state.status = "started"
+      state.showSettings = false
+      state.lastProgressTimestamp = Date.now()
     }),
 
     stop: create.reducer(state => {
       state.status = "stopped"
+      state.showTimeoutWarning = false
+      state.timeoutCountdown = null
+      state.lastProgressTimestamp = null
     }),
 
     flipHorizontally: create.reducer(state => {
       state.horizontallyFlipped = !state.horizontallyFlipped
+      saveSettingsToStorage(state)
     }),
 
     flipVertically: create.reducer(state => {
       state.verticallyFlipped = !state.verticallyFlipped
+      saveSettingsToStorage(state)
     }),
 
     setFontSize: create.reducer((state, action: PayloadAction<number>) => {
       state.fontSize = action.payload
+      saveSettingsToStorage(state)
     }),
 
     setMargin: create.reducer((state, action: PayloadAction<number>) => {
       state.margin = action.payload
+      saveSettingsToStorage(state)
     }),
 
     setOpacity: create.reducer((state, action: PayloadAction<number>) => {
       state.opacity = action.payload
+      saveSettingsToStorage(state)
+    }),
+
+    setReadLinePosition: create.reducer((state, action: PayloadAction<number>) => {
+      state.readLinePosition = action.payload
+      saveSettingsToStorage(state)
+    }),
+
+    resetToDefaults: create.reducer(state => {
+      state.fontSize = 115
+      state.margin = 350
+      state.opacity = 100
+      state.readLinePosition = 90
+      state.horizontallyFlipped = false
+      state.verticallyFlipped = false
+      localStorage.removeItem('appSettings')
+    }),
+
+    updateLastProgress: create.reducer((state) => {
+      state.lastProgressTimestamp = Date.now()
+      state.showTimeoutWarning = false
+      state.timeoutCountdown = null
+    }),
+
+    startTimeoutWarning: create.reducer((state) => {
+      state.showTimeoutWarning = true
+      state.timeoutCountdown = 8
+    }),
+
+    updateTimeoutCountdown: create.reducer((state, action: PayloadAction<number>) => {
+      state.timeoutCountdown = action.payload
+    }),
+
+    resetTimeout: create.reducer((state) => {
+      state.showTimeoutWarning = false
+      state.timeoutCountdown = null
+      state.lastProgressTimestamp = Date.now()
+    }),
+
+    clearTimeoutState: create.reducer((state) => {
+      state.showTimeoutWarning = false
+      state.timeoutCountdown = null
+      state.lastProgressTimestamp = null
     }),
   }),
 
   selectors: {
     selectStatus: state => state.status,
+    selectShowSettings: state => state.showSettings,
     selectFontSize: state => state.fontSize,
     selectMargin: state => state.margin,
     selectHorizontallyFlipped: state => state.horizontallyFlipped,
     selectVerticallyFlipped: state => state.verticallyFlipped,
     selectOpacity: state => state.opacity,
+    selectReadLinePosition: state => state.readLinePosition,
+    selectShowTimeoutWarning: state => state.showTimeoutWarning,
+    selectTimeoutCountdown: state => state.timeoutCountdown,
+    selectLastProgressTimestamp: state => state.lastProgressTimestamp,
   },
 })
 
-// Action creators are generated for each case reducer function.
 export const {
-  toggleEdit,
+  toggleQuickEdit,
+  toggleEditor,
+  toggleSettings,
   start,
   stop,
   flipHorizontally,
@@ -84,13 +217,25 @@ export const {
   setFontSize,
   setMargin,
   setOpacity,
+  setReadLinePosition,
+  resetToDefaults,
+  updateLastProgress,
+  startTimeoutWarning,
+  updateTimeoutCountdown,
+  resetTimeout,
+  clearTimeoutState,
 } = navbarSlice.actions
 
 export const {
   selectStatus,
+  selectShowSettings,
   selectFontSize,
   selectMargin,
   selectHorizontallyFlipped,
   selectVerticallyFlipped,
   selectOpacity,
+  selectReadLinePosition,
+  selectShowTimeoutWarning,
+  selectTimeoutCountdown,
+  selectLastProgressTimestamp,
 } = navbarSlice.selectors

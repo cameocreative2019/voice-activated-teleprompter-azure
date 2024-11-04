@@ -1,10 +1,14 @@
 @charset "utf-8";
 
+// Variables
 $button-disabled-background-color: hsl(0, 0%, 4%);
 $button-disabled-opacity: 0.2;
+$primary-purple: #D00070;
+$slider-knob: #be1f71;
 
 @import "bulma";
 
+// Base styles
 html,
 body {
   height: 100vh;
@@ -19,7 +23,6 @@ body {
 }
 
 /* Layout */
-
 .navbar {
   flex-shrink: 0;
   border-bottom: 1px solid $grey-darker;
@@ -27,24 +30,102 @@ body {
 
 .content-area {
   height: 100%;
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+/* Content styles */
+.content {
+  overflow: auto;
+  background-color: $black;
+  border: none;
+  outline: none;
+  width: 100%;
+  height: 100%;
+  color: $white;
+  line-height: inherit;
+
+  &:focus {
+    outline: none;
+  }
+
+  // Remove transitions that affect layout
+  &.editor-mode {
+    font-size: 25px !important;
+  }
+
+  // Ensure no transition on the textarea
+&[type="textarea"], // if it's an input type="textarea"
+&textarea {         // if it's a textarea element
+  resize: none;
+}
+}
+
+div.content {
+  cursor: default;
+}
+
+.final-transcript {
+  color: $grey-darker;
+}
+
+.interim-transcript {
+  color: $yellow;
+}
+
+.content > span:hover {
+  color: #840B55 !important;
+}
+
+.content-container {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
 }
 
 /* NavBar styles */
-
-.navbar .title {
-  font-size: 2em;
+.navbar {
+  .title {
+    font-size: 2em;
+  }
 }
 
-.button,
-.button:focus {
-  background-color: $black;
-  border-color: $grey-dark;
-  color: $grey-dark;
+@keyframes editorPulse {
+  0% {
+    background: rgba(255, 255, 255, 0.1);
+  }
+  50% {
+    background: rgba(255, 255, 255, 0.25);
+  }
+  100% {
+    background: rgba(255, 255, 255, 0.1);
+  }
 }
 
-.button:hover {
-  border-color: $grey;
-  color: $grey;
+.button {
+  &,
+  &:focus {
+    background-color: $black;
+    border-color: $grey-dark;
+    color: $grey-dark;
+  }
+
+  &:hover {
+    border-color: $grey;
+    color: $grey;
+  }
+
+  &.editor-pulse {
+    animation: editorPulse 2s ease-in-out infinite;
+
+    &:hover {
+      animation: none;
+      background: rgba(255, 255, 255, 0.15);
+    }
+  }
 }
 
 .fa-play {
@@ -66,68 +147,428 @@ body {
   color: $yellow;
 }
 
-.slider > span {
-  margin-right: 0.5em;
-  color: $grey-light;
-}
-
 .buttons .dropdown {
   margin-right: 0.5rem;
 }
 
-input[type="range"] {
-  width: 80px;
+/* Navbar fade styles */
+.navbar.is-floating-bottom {
+  margin: 20px;
+  margin-bottom: 40px;
+  border-radius: 20px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+  background-color: rgba(32, 33, 35, 0.9);
+
+  &.started {
+    background-color: rgba(0, 0, 0, 0);
+    backdrop-filter: none;
+    box-shadow: none;
+    border: none;
+
+    .navbar-menu {
+      .navbar-start {
+        .buttons > *:not(.is-custom-start) {
+          opacity: 0;
+          pointer-events: none;
+        }
+      }
+
+      .navbar-end {
+        opacity: 0;
+        pointer-events: none;
+      }
+    }
+
+    .button.is-stop {
+      background: rgba(0, 0, 0, 0.5);
+      backdrop-filter: blur(10px);
+      opacity: 1 !important;
+      pointer-events: auto !important;
+    }
+  }
+
+  .navbar-end {
+    display: flex;
+    align-items: center;
+    margin-left: auto;
+  }
+
+  .button {
+    height: 48px;
+    padding: 8px 24px;
+    border-radius: 24px;
+    border: none;
+    font-weight: 500;
+    font-size: 1rem;
+
+    &.is-start {
+      background: #D00070;
+      color: white;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(132, 22, 79, 0.3);
+      }
+
+      .fa-play {
+        color: white;
+      }
+    }
+
+    &.is-stop {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+    }
+
+    &:not(.is-start) {
+      background: rgba(255, 255, 255, 0.1);
+      color: white;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.15);
+      }
+    }
+
+    &.is-active {
+      background: $grey;
+      color: white;
+
+      &:hover {
+        background: lighten($grey, 5%);
+      }
+    }
+
+    .icon-text {
+      .icon {
+        margin-right: 8px;
+      }
+    }
+
+    &.editing {
+      background-color: #485fc7;
+      color: #fff;
+
+      &:hover {
+        background-color: #364fc7;
+      }
+    }
+  }
+
+  .buttons {
+    gap: 12px;
+    padding: 8px;
+  }
+
+.navbar-item {
+  padding: 8px 12px; // Reduced padding to bring items closer
+
+  &:last-child {
+    padding-right: 16px;
+  }
 }
 
-.navbar-brand ul {
-  margin-top: 0.3em;
-}
-
-.navbar-brand li {
-  float: left;
-  padding: 0 0.5em;
-  border-right: 1px solid $grey;
-}
-
-.navbar-brand li.last {
-  border: none;
-}
-
-.navbar-brand li a {
-  color: $cyan;
-  text-decoration: underline;
-}
-
-/* Content styles */
-
-.content {
-  overflow: auto;
-  background-color: $black;
-  border: none;
-  outline: none;
-  width: 100%;
-  height: 100%;
-  color: $white;
+/* Settings Controls */
+.settings-controls {
+  display: flex;
+  gap: 24px; // Reduced from 32px to tighten spacing
+  opacity: 0;
+  max-width: 0;
+  overflow: hidden;
+  visibility: hidden;
+  align-items: center;
   padding: 0;
-  line-height: inherit;
+
+  &.visible {
+    opacity: 1;
+    visibility: visible;
+    max-width: 1000px;
+    padding: 0 16px; // Reduced from 24px to bring elements closer
+    padding-bottom: 4px;
+  }
+
+  .slider {
+    min-width: 160px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+    .slider-label-group {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      margin-bottom: -2px;
+    }
+
+    .slider-label {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: white;
+      opacity: 0.8;
+      text-align: center;
+    }
+
+  .clear-storage-btn {
+    height: 48px; // Match the height of the slider controls
+    padding: 10 30px;
+    margin-left: 4px;
+    margin-bottom: 0px; // Align with slider controls
+    background: rgba(176, 65, 65, 0.2);
+    border: 1px solid rgba(176, 65, 65, 0.3);
+    color: #fff;
+    align-self: flex-end; // Align with bottom of sliders
+    display: inline-flex;
+    align-items: center;
+    white-space: nowrap;
+
+
+    &:hover {
+      background: rgba(176, 65, 65, 0.3);
+      border-color: rgba(176, 65, 65, 0.4);
+    }
+
+    .icon-text {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      line-height: 1.1;
+      font-weight: 300;
+
+      .icon {
+        margin-right: 0; // Remove default margin and use gap instead
+      }
+    }
+  }
+
+
+    .reset-button {
+      padding: 0;
+      background: none;
+      border: none;
+      color: rgba(255, 255, 255, 0.4);
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      &:hover {
+        color: rgba(255, 255, 255, 0.8);
+      }
+    }
+
+    .slider-controls {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .control-group {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      background: rgba(32, 33, 35, 0.9);
+      border-radius: 6px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      padding: 2px;
+      height: 28px;
+
+      > * {
+        flex: 0 0 auto;
+      }
+    }
+
+    .control-button {
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: transparent;
+      border: none;
+      color: white;
+      padding: 0;
+      flex-shrink: 0;
+
+      &:hover:not(:disabled) {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 4px;
+      }
+
+      &:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+      }
+    }
+
+    .value-display {
+      flex: 1 1 auto;
+      min-width: 60px;
+      padding: 2px 8px;
+      background: rgba(0, 0, 0, 0.2);
+      border-radius: 4px;
+      margin: 0 4px;
+      text-align: center;
+      color: white;
+      font-size: 0.875rem;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 4px;
+      -webkit-appearance: none;
+      background: rgba(255, 255, 255, 0.1);
+      border-radius: 2px;
+      margin: 0;
+      padding: 0;
+      display: block;
+      position: relative;
+      cursor: pointer;
+
+      &::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background: $slider-knob;
+        cursor: pointer;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        margin-top: -4px;
+
+        &:hover {
+          background: lighten($slider-knob, 10%);
+        }
+      }
+
+      &::-moz-range-thumb {
+        width: 12px;
+        height: 12px;
+        border: 2px solid rgba(255, 255, 255, 0.1);
+        border-radius: 50%;
+        background: $slider-knob;
+        cursor: pointer;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+
+        &:hover {
+          background: lighten($slider-knob, 10%);
+        }
+      }
+
+      &::-webkit-slider-runnable-track {
+        height: 4px;
+        border-radius: 2px;
+      }
+
+      &::-moz-range-track {
+        height: 4px;
+        border-radius: 2px;
+      }
+
+      &:focus {
+        outline: none;
+      }
+    }
+  }
 }
 
-.content:focus {
-  outline: none;
+// Ensure consistent spacing between navbar buttons
+.buttons.navbar-item {
+  .button {
+    margin-right: 0.5rem;
+
+    &:last-child {
+      margin-right: 0;
+    }
+  }
+
+  .other-buttons {
+    display: inline-flex;
+
+    &.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+  }
 }
 
-div.content {
-  cursor: default;
+.navbar-end.hidden {
+  opacity: 0;
+  pointer-events: none;
 }
 
-.final-transcript {
-  color: $grey-darker;
+.timeout-warning-container {
+  position: fixed;
+  bottom: 80px; // Position above navbar
+  left: 0;
+  right: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-in;
 }
 
-.interim-transcript {
-  color: $yellow;
+.timeout-warning {
+  background-color: rgba(176, 65, 65, 0.90); // Dark red with some transparency
+  border-radius: 6px;
+  padding: 1rem 1.5rem;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  color: white;
+  text-align: center;
+  max-width: 400px;
+  margin: 0 1rem;
 }
 
-.content > span:hover {
-  color: $red !important;
+.timeout-message {
+  margin-bottom: 0.5rem;
+  font-size: 1.1rem;
+
+  button {
+    font-size: 1rem;
+    &:hover {
+      background-color: rgba(255, 255, 255, 0.2) !important;
+    }
+  }
 }
+
+.timeout-countdown {
+  font-size: 0.9rem;
+  opacity: 0.9;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// Add fade out animation
+.timeout-warning-container.fade-out {
+  animation: fadeOut 0.2s ease-out;
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
