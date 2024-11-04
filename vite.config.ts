@@ -5,7 +5,7 @@ import type { ProxyOptions, Connect } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/',
+  base: './',
   build: {
     outDir: 'dist',
     assetsDir: 'assets',
@@ -36,6 +36,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
+      '@': resolve(__dirname, './src'),
       bulma: resolve(__dirname, "node_modules/bulma/bulma.sass"),
     }
   }
