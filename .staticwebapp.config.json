@@ -8,9 +8,44 @@
       "methods": ["GET", "POST"]
     },
     {
+      "route": "/assets/*",
+      "headers": {
+        "content-type": "application/javascript"
+      }
+    },
+    {
+      "route": "/*.js",
+      "headers": {
+        "content-type": "application/javascript"
+      }
+    },
+    {
+      "route": "/*.css",
+      "headers": {
+        "content-type": "text/css"
+      }
+    },
+    {
+      "route": "/*.tsx",
+      "headers": {
+        "content-type": "application/javascript"
+      }
+    },
+    {
       "route": "/*",
       "serve": "/index.html",
       "statusCode": 200
     }
-  ]
+  ],
+  "navigationFallback": {
+    "rewrite": "/index.html",
+    "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/js/*", "/assets/*"]
+  },
+  "mimeTypes": {
+    ".js": "application/javascript",
+    ".css": "text/css",
+    ".html": "text/html",
+    ".tsx": "application/javascript",
+    ".jsx": "application/javascript"
+  }
 }
