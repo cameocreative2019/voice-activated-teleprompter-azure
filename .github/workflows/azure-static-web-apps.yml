@@ -35,8 +35,18 @@ jobs:
           api_artifact_location: "dist"
           skip_api_build: false
 
-      - name: Check .oryx_prod_node_modules Directory Size
-        run: du -h -d 1 /github/workspace/api/.oryx_prod_node_modules || echo "Directory not found"
+      # Add step to count files and check size in dist and .oryx_prod_node_modules
+      - name: Count Files and Check Directory Size
+        run: |
+          echo "File count in dist:"
+          find /github/workspace/dist -type f | wc -l
+          
+          echo "File count in .oryx_prod_node_modules:"
+          find /github/workspace/api/.oryx_prod_node_modules -type f | wc -l
+          
+          echo "Directory size summary:"
+          du -h -d 1 /github/workspace/dist
+          du -h -d 1 /github/workspace/api/.oryx_prod_node_modules
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
