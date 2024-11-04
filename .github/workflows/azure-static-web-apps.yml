@@ -23,11 +23,13 @@ jobs:
           azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
           repo_token: ${{ secrets.GITHUB_TOKEN }}
           action: "upload"
-          app_location: "/" # Location of your app code
-          api_location: "api" # Location of Azure Function code
-          output_location: "dist" # Built app content directory
+          app_location: "/"
+          api_location: "api"
+          output_location: "dist"
           app_build_command: "npm run build"
           api_build_command: "npm run build"
+          api_artifact_location: "dist" # Specify where your API build outputs to
+          skip_api_build: false
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
