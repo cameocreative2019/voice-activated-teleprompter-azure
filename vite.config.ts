@@ -15,9 +15,26 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
       },
       output: {
-        entryFileNames: `assets/[name].js`,
-        chunkFileNames: `assets/[name].js`,
-        assetFileNames: `assets/[name].[ext]`
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash].[ext]',
+        format: 'es',
+        manualChunks: (id) => {
+          if (id.includes('node_modules')) {
+            return 'vendor'
+          }
+        }
+      }
+    },
+    modulePreload: {
+      polyfill: true
+    },
+    target: 'esnext',
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: true,
+        drop_debugger: true
       }
     }
   },
@@ -39,13 +56,13 @@ export default defineConfig({
             console.log('Received Response from:', req.method, req.url, proxyRes.statusCode);
           });
         }
-      },
-    },
+      }
+    }
   },
   resolve: {
     alias: {
       bulma: resolve(__dirname, "node_modules/bulma/bulma.sass"),
     },
     extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
-  },
+  }
 })

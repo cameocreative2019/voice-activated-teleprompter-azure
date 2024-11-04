@@ -4,6 +4,13 @@
   },
   "routes": [
     {
+      "route": "/assets/*",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable",
+        "content-type": "application/javascript; charset=utf-8"
+      }
+    },
+    {
       "route": "/api/*",
       "methods": ["GET", "POST"],
       "headers": {
@@ -11,38 +18,31 @@
       }
     },
     {
-      "route": "/assets/*.js",
+      "route": "/*.css",
       "headers": {
-        "content-type": "application/javascript; charset=utf-8"
-      }
-    },
-    {
-      "route": "/src/*.tsx",
-      "headers": {
-        "content-type": "application/javascript; charset=utf-8"
+        "content-type": "text/css; charset=utf-8",
+        "cache-control": "public, max-age=31536000, immutable"
       }
     },
     {
       "route": "/*.js",
       "headers": {
-        "content-type": "application/javascript; charset=utf-8"
-      }
-    },
-    {
-      "route": "/*.css",
-      "headers": {
-        "content-type": "text/css; charset=utf-8"
+        "content-type": "application/javascript; charset=utf-8",
+        "cache-control": "public, max-age=31536000, immutable"
       }
     },
     {
       "route": "/*",
       "serve": "/index.html",
-      "rewrite": "/index.html"
+      "headers": {
+        "cache-control": "no-cache",
+        "content-type": "text/html; charset=utf-8"
+      }
     }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/js/*", "/api/*", "/assets/*"]
+    "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/assets/*", "/api/*"]
   },
   "mimeTypes": {
     ".js": "application/javascript; charset=utf-8",
@@ -55,11 +55,12 @@
     ".gif": "image/gif",
     ".svg": "image/svg+xml",
     ".ico": "image/x-icon",
-    ".tsx": "application/javascript; charset=utf-8",
-    ".jsx": "application/javascript; charset=utf-8"
+    ".txt": "text/plain; charset=utf-8"
   },
   "globalHeaders": {
-    "content-security-policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob: ws:",
-    "Access-Control-Allow-Origin": "*"
+    "content-security-policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob: ws:; font-src 'self' https: data: blob:; img-src 'self' https: data: blob:;",
+    "X-Content-Type-Options": "nosniff",
+    "X-Frame-Options": "DENY",
+    "X-XSS-Protection": "1; mode=block"
   }
 }

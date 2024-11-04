@@ -7,7 +7,7 @@
     "dev:client": "vite",
     "dev:server": "node server/index.js",
     "dev": "npm-run-all --parallel dev:server dev:client",
-    "build": "tsc && vite build",
+    "build": "tsc && vite build --mode production",
     "preview": "vite preview",
     "test": "exit 0",
     "format": "prettier --write .",
