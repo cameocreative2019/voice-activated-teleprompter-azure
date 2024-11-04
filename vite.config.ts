@@ -7,11 +7,21 @@ export default defineConfig({
   plugins: [react()],
   base: '/',
   build: {
-    manifest: true,
     outDir: 'dist',
     assetsDir: 'assets',
+    sourcemap: true,
     rollupOptions: {
-      input: '/src/main.tsx'
+      input: {
+        main: resolve(__dirname, 'index.html')
+      },
+      output: {
+        manualChunks: {
+          vendor: ['react', 'react-dom', 'react-redux', '@reduxjs/toolkit'],
+        },
+        entryFileNames: 'assets/[name].[hash].js',
+        chunkFileNames: 'assets/[name].[hash].js',
+        assetFileNames: 'assets/[name].[hash].[ext]'
+      }
     }
   },
   server: {
