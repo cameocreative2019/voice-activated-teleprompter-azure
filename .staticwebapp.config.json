@@ -5,11 +5,15 @@
   "routes": [
     {
       "route": "/api/*",
-      "methods": ["GET", "POST"]
+      "methods": ["GET", "POST"],
+      "headers": {
+        "Access-Control-Allow-Origin": "*"
+      }
     },
     {
       "route": "/assets/*",
       "headers": {
+        "cache-control": "must-revalidate, max-age=31536000",
         "content-type": "application/javascript"
       }
     },
@@ -34,17 +38,24 @@
     {
       "route": "/*",
       "serve": "/index.html",
+      "rewrite": "/index.html",
       "statusCode": 200
     }
   ],
   "navigationFallback": {
     "rewrite": "/index.html",
-    "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/js/*", "/assets/*"]
+    "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/js/*", "/api/*", "/assets/*"]
   },
   "mimeTypes": {
     ".js": "application/javascript",
     ".css": "text/css",
     ".html": "text/html",
+    ".json": "application/json",
+    ".png": "image/png",
+    ".jpg": "image/jpeg",
+    ".gif": "image/gif",
+    ".svg": "image/svg+xml",
+    ".ico": "image/x-icon",
     ".tsx": "application/javascript",
     ".jsx": "application/javascript"
   }

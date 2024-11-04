@@ -6,6 +6,12 @@ import type { Connect } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
+  base: '/',
+  build: {
+    outDir: 'dist',
+    assetsDir: 'assets',
+    sourcemap: true,
+  },
   server: {
     proxy: {
       '/api': {
