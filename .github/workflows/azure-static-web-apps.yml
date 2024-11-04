@@ -34,6 +34,7 @@ jobs:
           api_build_command: "npm run build"
           skip_api_build: false
 
+<<<<<<< HEAD
       # Debug step to analyze build output
       - name: Analyze Build Output
         if: always()
@@ -57,6 +58,20 @@ jobs:
           
           echo "Largest files in build:"
           find . -type f -exec du -sh {} + | sort -rh | head -n 10
+=======
+      # Add step to count files and check size in dist and .oryx_prod_node_modules
+      - name: Count Files and Check Directory Size
+        run: |
+          echo "File count in dist:"
+          find /github/workspace/dist -type f | wc -l
+          
+          echo "File count in .oryx_prod_node_modules:"
+          find /github/workspace/api/.oryx_prod_node_modules -type f | wc -l
+          
+          echo "Directory size summary:"
+          du -h -d 1 /github/workspace/dist
+          du -h -d 1 /github/workspace/api/.oryx_prod_node_modules
+>>>>>>> parent of 1b0e018 (misc fixes)
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
