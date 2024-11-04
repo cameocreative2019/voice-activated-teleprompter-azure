@@ -20,6 +20,26 @@ jobs:
       - name: Set NODE_ENV to Production
         run: echo "NODE_ENV=production" >> $GITHUB_ENV
 
+      # Add debugging steps before build
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Dependencies
+        run: |
+          npm ci
+          cd api && npm ci
+
+      - name: Debug - List Current Directory
+        run: |
+          echo "Current directory contents:"
+          ls -la
+          echo "Node modules size:"
+          du -sh node_modules
+          echo "API node modules size:"
+          du -sh api/node_modules
+
       - name: Build And Deploy
         id: builddeploy
         uses: Azure/static-web-apps-deploy@v1
@@ -32,46 +52,24 @@ jobs:
           output_location: "dist"
           app_build_command: "npm run build"
           api_build_command: "npm run build"
+          api_artifact_location: "dist"
           skip_api_build: false
 
-<<<<<<< HEAD
-      # Debug step to analyze build output
-      - name: Analyze Build Output
+      # Add post-build debugging
+      - name: Debug - Check Build Output
         if: always()
         run: |
-          echo "=== API Build Analysis ==="
-          echo "API node_modules size:"
-          du -sh api/node_modules || echo "No api/node_modules found"
+          echo "Dist directory contents:"
+          ls -la dist || echo "dist directory not found"
           
-          echo "API build output:"
-          du -sh api/dist || echo "No api/dist found"
+          echo "Dist directory size:"
+          du -sh dist || echo "dist directory not found"
           
-          echo "Number of files in API dist:"
-          find api/dist -type f | wc -l || echo "No api/dist found"
+          echo "Number of files in dist:"
+          find dist -type f | wc -l || echo "dist directory not found"
           
-          echo "=== Frontend Build Analysis ==="
-          echo "Frontend dist size:"
-          du -sh dist || echo "No dist found"
-          
-          echo "Number of files in frontend dist:"
-          find dist -type f | wc -l || echo "No dist found"
-          
-          echo "Largest files in build:"
-          find . -type f -exec du -sh {} + | sort -rh | head -n 10
-=======
-      # Add step to count files and check size in dist and .oryx_prod_node_modules
-      - name: Count Files and Check Directory Size
-        run: |
-          echo "File count in dist:"
-          find /github/workspace/dist -type f | wc -l
-          
-          echo "File count in .oryx_prod_node_modules:"
-          find /github/workspace/api/.oryx_prod_node_modules -type f | wc -l
-          
-          echo "Directory size summary:"
-          du -h -d 1 /github/workspace/dist
-          du -h -d 1 /github/workspace/api/.oryx_prod_node_modules
->>>>>>> parent of 1b0e018 (misc fixes)
+          echo "API dist directory contents:"
+          ls -la api/dist || echo "api/dist directory not found"
 
   close_pull_request_job:
     if: github.event_name == 'pull_request' && github.event.action == 'closed'
