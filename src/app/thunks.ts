@@ -27,8 +27,7 @@ const clearTimers = () => {
     inactivityTimer = null;
   }
   if (countdownTimer !== null) {
-    // Cast to any to avoid the type error
-    clearInterval(countdownTimer as any);
+    clearInterval(countdownTimer);
     countdownTimer = null;
   }
 };

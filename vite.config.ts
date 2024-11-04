@@ -1,6 +1,7 @@
-import { defineConfig, ProxyOptions } from "vite"
+import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 import { resolve } from "path"
+import type { ProxyOptions } from 'vite'
 import type { Connect } from 'vite'
 
 export default defineConfig({

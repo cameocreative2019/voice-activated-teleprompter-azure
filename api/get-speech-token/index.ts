@@ -1,7 +1,8 @@
 import {
-  HttpRequest,
-  Context
-} from "@azure/functions";
+  AzureFunction,
+  Context,
+  HttpRequest
+} from "@azure/functions"
 import axios, { AxiosError } from "axios";
 
 interface TokenResponse {
@@ -14,7 +15,7 @@ interface ErrorResponse {
   details?: unknown;
 }
 
-export default async function httpTrigger(
+const httpTrigger: AzureFunction = async function(
   context: Context,
   req: HttpRequest
 ): Promise<void> {
@@ -80,3 +81,5 @@ export default async function httpTrigger(
     };
   }
 }
+
+export default httpTrigger;

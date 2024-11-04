@@ -9,6 +9,7 @@ import {
 } from 'microsoft-cognitiveservices-speech-sdk';
 import axios from 'axios';
 import Cookies from 'universal-cookie';
+import { ServicePropertyChannel } from 'microsoft-cognitiveservices-speech-sdk';
 
 interface TokenResponse {
   token: string;
