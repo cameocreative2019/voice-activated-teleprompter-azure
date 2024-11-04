@@ -27,6 +27,17 @@ const DEFAULT_VALUES = {
   margin: 350,
   opacity: 100,
   readLinePosition: 90,
+} as const
+
+interface SettingValue {
+  value: number;
+  onChange: (value: number) => void;
+  defaultValue: number;
+  min: number;
+  max: number;
+  step: number;
+  label: string;
+  unit?: string;
 }
 
 export const NavBar = () => {
@@ -40,13 +51,11 @@ export const NavBar = () => {
   const opacity = useAppSelector(selectOpacity)
   const readLinePosition = useAppSelector(selectReadLinePosition)
 
-  // Initialize pulse state from localStorage
   useEffect(() => {
     const hasClickedButton = localStorage.getItem('hasClickedButton')
     setShouldPulse(!hasClickedButton)
   }, [])
 
-  // Helper function to handle any button click
   const handleAnyButtonClick = () => {
     if (shouldPulse) {
       setShouldPulse(false)
@@ -55,46 +64,75 @@ export const NavBar = () => {
   }
 
   const handleClearAll = () => {
-    // Clear all localStorage
     localStorage.clear()
-
-    // Reset pulse state
     setShouldPulse(true)
-
-    // Reset settings to defaults
     dispatch(resetToDefaults())
-
-    // Clear content
     dispatch(clearContent())
-
-    // Reset scroll position
     dispatch(setSavedPosition(0))
-
-    // If in editor mode, exit it
     if (status === "editorMode") {
       dispatch(toggleEditor())
     }
-
-    // If settings are open, close them
     if (showSettings) {
       dispatch(toggleSettings())
     }
   }
 
-  // Helper function to determine if in any editing state
-  const isEditing = status === "editing" || status === "editorMode";
+  const isEditing = status === "editing" || status === "editorMode"
 
-  // Get the scroll position from the document
   const handleQuickEdit = () => {
     handleAnyButtonClick()
-    const contentElement = document.querySelector('.content');
+    const contentElement = document.querySelector('.content')
     if (contentElement) {
-      const currentScroll = contentElement.scrollTop;
-      dispatch(setSavedPosition(currentScroll));
+      const currentScroll = contentElement.scrollTop
+      dispatch(setSavedPosition(currentScroll))
     }
-    dispatch(toggleQuickEdit());
-    if (showSettings) dispatch(toggleSettings());
-  };
+    dispatch(toggleQuickEdit())
+    if (showSettings) dispatch(toggleSettings())
+  }
+
+  // Define settings controls configuration
+  const settingsControls: SettingValue[] = [
+    {
+      label: "Brightness",
+      value: opacity,
+      unit: "%",
+      min: 0,
+      max: 100,
+      step: 10,
+      defaultValue: DEFAULT_VALUES.opacity,
+      onChange: (value) => dispatch(setOpacity(value))
+    },
+    {
+      label: "Margin",
+      value: margin,
+      unit: "px",
+      min: 0,
+      max: 500,
+      step: 10,
+      defaultValue: DEFAULT_VALUES.margin,
+      onChange: (value) => dispatch(setMargin(value))
+    },
+    {
+      label: "Read Line",
+      value: readLinePosition,
+      unit: "%",
+      min: 40,
+      max: 90,
+      step: 5,
+      defaultValue: DEFAULT_VALUES.readLinePosition,
+      onChange: (value) => dispatch(setReadLinePosition(value))
+    },
+    {
+      label: "Font Size",
+      value: fontSize,
+      unit: "px",
+      min: 10,
+      max: 200,
+      step: 5,
+      defaultValue: DEFAULT_VALUES.fontSize,
+      onChange: (value) => dispatch(setFontSize(value))
+    }
+  ]
 
   return (
     <nav
@@ -191,81 +229,47 @@ export const NavBar = () => {
           <div
             className={`settings-controls ${showSettings && status === "stopped" ? "visible" : ""}`}
           >
-            <SettingsControl
-              label="Brightness"
-              value={opacity}
-              unit="%"
-              min={0}
-              max={100}
-              step={10}
-              onChange={(value) => dispatch(setOpacity(value))}
-              defaultValue={DEFAULT_VALUES.opacity}
-            />
-            <SettingsControl
-              label="Margin"
-              value={margin}
-              unit="px"
-              min={0}
-              max={500}
-              step={10}
-              onChange={(value) => dispatch(setMargin(value))}
-              defaultValue={DEFAULT_VALUES.margin}
-            />
-            <SettingsControl
-              label="Read Line"
-              value={readLinePosition}
-              unit="%"
-              min={40}
-              max={90}
-              step={5}
-              onChange={(value) => dispatch(setReadLinePosition(value))}
-              defaultValue={DEFAULT_VALUES.readLinePosition}
-            />
-            <SettingsControl
-  label="Font Size"
-  value={fontSize}
-  unit="px"
-  min={10}
-  max={200}
-  step={5}
-  onChange={(value) => dispatch(setFontSize(value))}
-  defaultValue={DEFAULT_VALUES.fontSize}
-/>
+            {settingsControls.map((control, index) => (
+              <SettingsControl
+                key={index}
+                {...control}
+              />
+            ))}
 
-<div className="settings-spacer"></div>
+            <div className="settings-spacer"></div>
 
-<button
-  className="button clear-storage-btn"
-  onClick={handleClearAll}
-  disabled={status !== "stopped"}
->
-  <span className="icon-text">
-    <span className="icon is-small">
-      <i className="fa-solid fa-trash" />
-    </span>
-    <span>Reset Page</span>
-  </span>
-</button>
-</div>
+            <button
+              className="button clear-storage-btn"
+              onClick={handleClearAll}
+              disabled={status !== "stopped"}
+            >
+              <span className="icon-text">
+                <span className="icon is-small">
+                  <i className="fa-solid fa-trash" />
+                </span>
+                <span>Reset Page</span>
+              </span>
+            </button>
+          </div>
 
-{status !== "started" && (
-  <div className="navbar-item">
-    <button
-      className={`button ${showSettings ? "is-active" : ""}`}
-      onClick={() => dispatch(toggleSettings())}
-      disabled={status !== "stopped"}
-    >
-      <span className="icon-text">
-        <span className="icon is-small">
-          <i className="fa-solid fa-gear" />
-        </span>
-        <span>Settings</span>
-      </span>
-    </button>
-  </div>
-)}
-</div>
-</div>
-</nav>
+          {status !== "started" && (
+            <div className="navbar-item">
+              <button
+                className={`button ${showSettings ? "is-active" : ""}`}
+                onClick={() => dispatch(toggleSettings())}
+                disabled={status !== "stopped"}
+              >
+                <span className="icon-text">
+                  <span className="icon is-small">
+                    <i className="fa-solid fa-gear" />
+                  </span>
+                  <span>Settings</span>
+                </span>
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </nav>
   )
 }

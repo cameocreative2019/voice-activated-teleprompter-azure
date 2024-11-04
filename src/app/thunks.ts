@@ -27,7 +27,7 @@ const clearTimers = () => {
     inactivityTimer = null;
   }
   if (countdownTimer) {
-    clearInterval(countdownTimer);
+    clearInterval(countdownTimer as NodeJS.Timeout);
     countdownTimer = null;
   }
 };

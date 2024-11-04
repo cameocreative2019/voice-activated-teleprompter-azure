@@ -1,7 +1,18 @@
 import React from 'react';
 import { Plus, Minus, RotateCcw } from 'lucide-react';
 
-const SettingsControl = ({
+interface SettingsControlProps {
+  label: string;
+  value: number;
+  unit?: string;
+  min: number;
+  max: number;
+  step: number;
+  onChange: (value: number) => void;
+  defaultValue: number;
+}
+
+const SettingsControl: React.FC<SettingsControlProps> = ({
   label,
   value,
   unit = "",

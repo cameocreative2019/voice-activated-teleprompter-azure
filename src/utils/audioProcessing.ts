@@ -1,40 +1,49 @@
-import { setInterimTranscriptIndex, setFinalTranscriptIndex } from '../features/content/contentSlice'
-import { store } from '../app/store'
+interface Window {
+  webkitSpeechRecognition?: typeof SpeechRecognition;
+  SpeechRecognition?: typeof SpeechRecognition;
+}
 
-const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)()
-recognition.continuous = true
-recognition.interimResults = true
-recognition.lang = 'en-US'
+declare var window: Window;
 
-let finalTranscript = ''
-let interimTranscript = ''
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SpeechRecognition) {
+  throw new Error('Speech recognition not supported in this browser');
+}
+
+const recognition = new SpeechRecognition();
+recognition.continuous = true;
+recognition.interimResults = true;
+recognition.lang = 'en-US';
+
+let finalTranscript = '';
+let interimTranscript = '';
 
 recognition.onresult = (event: SpeechRecognitionEvent) => {
   const transcript = Array.from(event.results)
     .map(result => result[0])
     .map(result => result.transcript)
-    .join('')
+    .join('');
 
   if (event.results[0].isFinal) {
-    finalTranscript += transcript
-    store.dispatch(setFinalTranscriptIndex(finalTranscript.length))
-    interimTranscript = ''
+    finalTranscript += transcript;
+    store.dispatch(setFinalTranscriptIndex(finalTranscript.length));
+    interimTranscript = '';
   } else {
-    interimTranscript = transcript
-    store.dispatch(setInterimTranscriptIndex(finalTranscript.length + interimTranscript.length))
+    interimTranscript = transcript;
+    store.dispatch(setInterimTranscriptIndex(finalTranscript.length + interimTranscript.length));
   }
-}
+};
 
-recognition.onerror = (event: SpeechRecognitionError) => {
-  console.error('Speech recognition error detected: ', event.error)
-}
+recognition.onerror = (event: SpeechRecognitionErrorEvent) => {
+  console.error('Speech recognition error detected: ', event.error);
+};
 
 export const startAudioProcessing = (stream: MediaStream) => {
-  const audioContext = new (window.AudioContext || window.webkitAudioContext)()
-  const source = audioContext.createMediaStreamSource(stream)
-  recognition.start()
-}
+  const audioContext = new AudioContext();
+  const source = audioContext.createMediaStreamSource(stream);
+  recognition.start();
+};
 
 export const stopAudioProcessing = () => {
-  recognition.stop()
-}
+  recognition.stop();
+};

@@ -21,6 +21,11 @@ import {
   selectInterimTranscriptIndex,
 } from "./contentSlice"
 
+interface Padding {
+  top: number;
+  bottom: number;
+}
+
 export const Content = () => {
   const dispatch = useAppDispatch()
 
@@ -47,8 +52,7 @@ export const Content = () => {
   const prevStatusRef = useRef(status)
   const wasAtTopRef = useRef(true)
 
-  // Calculate padding based on container height and read line position
-  const calculatePadding = (containerHeight: number) => {
+  const calculatePadding = (containerHeight: number): Padding => {
     if (status === "editorMode") {
       const topPadding = containerHeight * 0.1;
       return {
@@ -57,15 +61,13 @@ export const Content = () => {
       };
     }
 
-    // For non-editor modes
     const readLinePixels = containerHeight * (readLinePosition / 100);
     return {
-      top: containerHeight * 0.1,  // 10% top padding for non-editor modes
+      top: containerHeight * 0.1,
       bottom: readLinePixels
     };
   };
 
-  // Get complete styles including margins
   const getStyles = () => {
     const baseStyles = {
       fontSize: `${fontSize}px`,
@@ -84,7 +86,6 @@ export const Content = () => {
     };
   };
 
-  // Set initial padding
   useEffect(() => {
     const currentElement = status === "editing" || status === "editorMode"
       ? textareaRef.current
@@ -97,9 +98,8 @@ export const Content = () => {
       currentElement.style.paddingTop = `${top}px`;
       currentElement.style.paddingBottom = `${bottom}px`;
     }
-  }, []); // Empty dependency array means this runs once on mount
+  }, []);
 
-  // Initialize wasAtTop state
   useLayoutEffect(() => {
     if (!isInitializedRef.current) {
       const currentElement = status === "editing" || status === "editorMode"
@@ -113,14 +113,12 @@ export const Content = () => {
     }
   }, [status]);
 
-  // Track scroll position continuously
   useEffect(() => {
     const handleScroll = (e: Event) => {
       const target = e.target as HTMLElement;
-      if (target.scrollTop !== savedPosition) {
-        dispatch(setSavedPosition(target.scrollTop));
-        wasAtTopRef.current = target.scrollTop === 0;
-      }
+      const scrollTop = target.scrollTop;
+      dispatch(setSavedPosition(scrollTop));
+      wasAtTopRef.current = scrollTop === 0;
     };
 
     const currentElement = status === "editing" || status === "editorMode"
@@ -132,9 +130,8 @@ export const Content = () => {
     return () => {
       currentElement?.removeEventListener('scroll', handleScroll);
     };
-  }, [status, dispatch, savedPosition]);
+  }, [status, dispatch]);
 
-  // Handle mode changes and restore scroll position
   useEffect(() => {
     if (status !== prevStatusRef.current) {
       const currentElement = status === "editing" || status === "editorMode"
@@ -146,17 +143,9 @@ export const Content = () => {
         const { top, bottom } = calculatePadding(containerHeight);
         const isLeavingEditorMode = prevStatusRef.current === "editorMode" && status !== "editorMode";
 
-        // Apply appropriate padding based on mode
-        if (status === "editorMode") {
-          currentElement.style.paddingTop = `${top}px`;
-          currentElement.style.paddingBottom = `${bottom}px`;
-        } else {
-          // For non-editor modes, apply the new top padding
-          currentElement.style.paddingTop = `${top}px`;
-          currentElement.style.paddingBottom = `${bottom}px`;
-        }
+        currentElement.style.paddingTop = `${top}px`;
+        currentElement.style.paddingBottom = `${bottom}px`;
 
-        // Use requestAnimationFrame to ensure the DOM has updated
         requestAnimationFrame(() => {
           requestAnimationFrame(() => {
             if (isLeavingEditorMode && wasAtTopRef.current) {
@@ -172,7 +161,6 @@ export const Content = () => {
     }
   }, [status, savedPosition, readLinePosition]);
 
-  // Handle read line position changes
   useEffect(() => {
     if (prevReadLineRef.current !== readLinePosition) {
       const currentElement = status === "editing" || status === "editorMode"
@@ -183,17 +171,14 @@ export const Content = () => {
         const containerHeight = currentElement.clientHeight;
         const { top, bottom } = calculatePadding(containerHeight);
 
-        // Maintain appropriate padding for current mode
         currentElement.style.paddingTop = `${top}px`;
         currentElement.style.paddingBottom = `${bottom}px`;
 
-        // Calculate new scroll position to maintain text position relative to read line
         const currentScrollTop = currentElement.scrollTop;
         const currentReadLinePosition = containerHeight * (prevReadLineRef.current / 100);
         const newReadLinePosition = containerHeight * (readLinePosition / 100);
         const scrollAdjustment = newReadLinePosition - currentReadLinePosition;
 
-        // Apply new scroll position with smooth animation
         currentElement.scrollTo({
           top: currentScrollTop + scrollAdjustment,
           behavior: 'smooth'
@@ -204,7 +189,6 @@ export const Content = () => {
     }
   }, [readLinePosition, status]);
 
-  // Handle scroll in started mode
   useEffect(() => {
     if (status === "started" && containerRef.current && lastRef.current) {
       if (interimTranscriptIndex !== lastInterimIndex.current) {
@@ -213,7 +197,6 @@ export const Content = () => {
         const readLineOffset = containerHeight * ((100 - readLinePosition) / 100);
         const targetPosition = lastRef.current.offsetTop - readLineOffset;
 
-        // Only update bottom padding
         const { bottom } = calculatePadding(containerHeight);
         container.style.paddingBottom = `${bottom}px`;
 
@@ -249,32 +232,33 @@ export const Content = () => {
               interimTranscriptIndex > 0 &&
               index === Math.min(interimTranscriptIndex + 2, array.length - 1)
                 ? { ref: lastRef }
-                : {}
+                : {};
+
             return (
               <span
                 key={textElement.index}
                 onClick={() => {
-                  dispatch(setFinalTranscriptIndex(index))
-                  dispatch(setInterimTranscriptIndex(index))
+                  void dispatch(setFinalTranscriptIndex(index));
+                  void dispatch(setInterimTranscriptIndex(index));
                 }}
                 className={
-  finalTranscriptIndex > 0 &&
-  textElement.index < finalTranscriptIndex  // Changed to < instead of <=
-    ? "final-transcript"
-    : interimTranscriptIndex > 0 &&
-        textElement.index <= interimTranscriptIndex + 1
-      ? "interim-transcript"
-      : "has-text-white"
-}
+                  finalTranscriptIndex > 0 &&
+                  textElement.index < finalTranscriptIndex
+                    ? "final-transcript"
+                    : interimTranscriptIndex > 0 &&
+                      textElement.index <= interimTranscriptIndex + 1
+                    ? "interim-transcript"
+                    : "has-text-white"
+                }
                 {...itemProps}
                 dangerouslySetInnerHTML={{
                   __html: escape(textElement.value).replace(/\n/g, "<br>"),
                 }}
               />
-            )
+            );
           })}
         </div>
       )}
     </main>
-  )
-}
+  );
+};

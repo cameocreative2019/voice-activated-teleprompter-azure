@@ -1,3 +1,4 @@
+import { PayloadAction } from "@reduxjs/toolkit";
 import { createAppSlice } from "../../app/createAppSlice"
 
 export interface ScrollSliceState {
@@ -12,8 +13,8 @@ export const scrollSlice = createAppSlice({
   name: "scroll",
   initialState,
   reducers: create => ({
-    setSavedPosition: create.reducer((state, action) => {
-      state.savedPosition = action.payload
+    setSavedPosition: create.reducer((state, action: PayloadAction<number>) => {
+      state.savedPosition = action.payload;
     })
   }),
   selectors: {

@@ -1,6 +1,15 @@
-// api/get-speech-token/index.ts
-import { AzureFunction, Context, HttpRequest } from "@azure/functions";
-import axios, { AxiosError } from "axios";
+import { AzureFunction, Context, HttpRequest } from "@azure/functions"
+
+// Add type definition for the response
+interface TokenResponse {
+  token: string;
+  region: string;
+}
+
+interface ErrorResponse {
+  error: string;
+  details?: unknown;
+}
 
 const httpTrigger: AzureFunction = async function (
   context: Context,
@@ -17,7 +26,7 @@ const httpTrigger: AzureFunction = async function (
       status: 500,
       body: {
         error: "Speech key or region not configured"
-      }
+      } as ErrorResponse
     };
     return;
   }
@@ -39,7 +48,7 @@ const httpTrigger: AzureFunction = async function (
       body: {
         token: response.data,
         region: speechRegion
-      }
+      } as TokenResponse
     };
   } catch (err) {
     const error = err as Error | AxiosError;
@@ -66,7 +75,7 @@ const httpTrigger: AzureFunction = async function (
       body: {
         error: errorMessage,
         details: errorDetails
-      }
+      } as ErrorResponse
     };
   }
 };
