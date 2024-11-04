@@ -1,8 +1,7 @@
 import { defineConfig } from "vite"
 import react from "@vitejs/plugin-react"
 import { resolve } from "path"
-import type { ProxyOptions } from 'vite'
-import type { Connect } from 'vite'
+import type { ProxyOptions, Connect } from 'vite'
 
 export default defineConfig({
   plugins: [react()],
@@ -11,6 +10,16 @@ export default defineConfig({
     outDir: 'dist',
     assetsDir: 'assets',
     sourcemap: true,
+    rollupOptions: {
+      input: {
+        main: resolve(__dirname, 'index.html'),
+      },
+      output: {
+        entryFileNames: `assets/[name].js`,
+        chunkFileNames: `assets/[name].js`,
+        assetFileNames: `assets/[name].[ext]`
+      }
+    }
   },
   server: {
     proxy: {
@@ -37,5 +46,6 @@ export default defineConfig({
     alias: {
       bulma: resolve(__dirname, "node_modules/bulma/bulma.sass"),
     },
+    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
   },
 })

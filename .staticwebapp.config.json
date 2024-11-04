@@ -11,35 +11,33 @@
       }
     },
     {
-      "route": "/assets/*",
+      "route": "/assets/*.js",
       "headers": {
-        "cache-control": "must-revalidate, max-age=31536000",
-        "content-type": "application/javascript"
+        "content-type": "application/javascript; charset=utf-8"
+      }
+    },
+    {
+      "route": "/src/*.tsx",
+      "headers": {
+        "content-type": "application/javascript; charset=utf-8"
       }
     },
     {
       "route": "/*.js",
       "headers": {
-        "content-type": "application/javascript"
+        "content-type": "application/javascript; charset=utf-8"
       }
     },
     {
       "route": "/*.css",
       "headers": {
-        "content-type": "text/css"
-      }
-    },
-    {
-      "route": "/*.tsx",
-      "headers": {
-        "content-type": "application/javascript"
+        "content-type": "text/css; charset=utf-8"
       }
     },
     {
       "route": "/*",
       "serve": "/index.html",
-      "rewrite": "/index.html",
-      "statusCode": 200
+      "rewrite": "/index.html"
     }
   ],
   "navigationFallback": {
@@ -47,16 +45,21 @@
     "exclude": ["/images/*.{png,jpg,gif}", "/css/*", "/js/*", "/api/*", "/assets/*"]
   },
   "mimeTypes": {
-    ".js": "application/javascript",
-    ".css": "text/css",
-    ".html": "text/html",
-    ".json": "application/json",
+    ".js": "application/javascript; charset=utf-8",
+    ".mjs": "application/javascript; charset=utf-8",
+    ".css": "text/css; charset=utf-8",
+    ".html": "text/html; charset=utf-8",
+    ".json": "application/json; charset=utf-8",
     ".png": "image/png",
     ".jpg": "image/jpeg",
     ".gif": "image/gif",
     ".svg": "image/svg+xml",
     ".ico": "image/x-icon",
-    ".tsx": "application/javascript",
-    ".jsx": "application/javascript"
+    ".tsx": "application/javascript; charset=utf-8",
+    ".jsx": "application/javascript; charset=utf-8"
+  },
+  "globalHeaders": {
+    "content-security-policy": "default-src 'self' 'unsafe-inline' 'unsafe-eval' https: data: blob: ws:",
+    "Access-Control-Allow-Origin": "*"
   }
 }
