@@ -1,19 +1,26 @@
 {
   "compilerOptions": {
-    "target": "ESNext",
-    "useDefineForClassFields": true,
-    "lib": ["DOM", "DOM.Iterable", "ESNext"],
-    "allowJs": false,
-    "skipLibCheck": true,
-    "esModuleInterop": false,
-    "allowSyntheticDefaultImports": true,
+    "module": "commonjs",
+    "target": "es2020",
+    "outDir": "dist",
+    "rootDir": ".",
+    "sourceMap": true,
     "strict": true,
-    "module": "ESNext",
     "moduleResolution": "node",
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx"
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "types": ["node", "@azure/functions"],
+    "lib": ["es2020"],
+    "resolveJsonModule": true
   },
-  "references": [{ "path": "./tsconfig.node.json" }]
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "local.settings.json"
+  ],
+  "compileOnSave": true
 }
