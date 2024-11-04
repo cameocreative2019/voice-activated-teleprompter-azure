@@ -7,18 +7,11 @@ export default defineConfig({
   plugins: [react()],
   base: '/',
   build: {
+    manifest: true,
     outDir: 'dist',
     assetsDir: 'assets',
-    sourcemap: true,
     rollupOptions: {
-      input: {
-        main: resolve(__dirname, 'index.html')
-      },
-      output: {
-        entryFileNames: 'assets/[name].[hash].js',
-        chunkFileNames: 'assets/[name].[hash].js',
-        assetFileNames: 'assets/[name].[hash].[ext]'
-      }
+      input: '/src/main.tsx'
     }
   },
   server: {
@@ -27,18 +20,7 @@ export default defineConfig({
         target: 'http://127.0.0.1:7071',
         changeOrigin: true,
         secure: false,
-        ws: true,
-        configure: (proxy: Connect.Server, _options: ProxyOptions) => {
-          proxy.on('error', (err: Error, _req: Connect.IncomingMessage, _res: Connect.ServerResponse) => {
-            console.log('proxy error', err);
-          });
-          proxy.on('proxyReq', (proxyReq: Connect.IncomingMessage, req: Connect.IncomingMessage, _res: Connect.ServerResponse) => {
-            console.log('Sending Request to:', req.method, req.url);
-          });
-          proxy.on('proxyRes', (proxyRes: Connect.IncomingMessage, req: Connect.IncomingMessage, _res: Connect.ServerResponse) => {
-            console.log('Received Response from:', req.method, req.url, proxyRes.statusCode);
-          });
-        }
+        ws: true
       }
     }
   },
