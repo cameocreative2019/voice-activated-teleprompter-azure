@@ -1,16 +1,20 @@
-interface Window {
-  webkitSpeechRecognition?: typeof SpeechRecognition;
-  SpeechRecognition?: typeof SpeechRecognition;
+import { store } from '../app/store';
+import { setInterimTranscriptIndex, setFinalTranscriptIndex } from '../features/content/contentSlice';
+
+declare global {
+  interface Window {
+    SpeechRecognition: typeof SpeechRecognition;
+    webkitSpeechRecognition: typeof SpeechRecognition;
+  }
 }
 
-declare var window: Window;
+const SpeechRecognitionAPI = window.SpeechRecognition || window.webkitSpeechRecognition;
 
-const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-if (!SpeechRecognition) {
+if (!SpeechRecognitionAPI) {
   throw new Error('Speech recognition not supported in this browser');
 }
 
-const recognition = new SpeechRecognition();
+const recognition = new SpeechRecognitionAPI();
 recognition.continuous = true;
 recognition.interimResults = true;
 recognition.lang = 'en-US';

@@ -1,6 +1,10 @@
-import { AzureFunction, Context, HttpRequest } from "@azure/functions"
+import {
+  HttpRequest,
+  HttpResponseInit,
+  InvocationContext
+} from "@azure/functions";
+import axios, { AxiosError } from "axios";
 
-// Add type definition for the response
 interface TokenResponse {
   token: string;
   region: string;
@@ -11,10 +15,10 @@ interface ErrorResponse {
   details?: unknown;
 }
 
-const httpTrigger: AzureFunction = async function (
-  context: Context,
-  req: HttpRequest
-): Promise<void> {
+export async function httpTrigger(
+  request: HttpRequest,
+  context: InvocationContext
+): Promise<HttpResponseInit> {
   context.log("Token request received");
 
   const speechKey = process.env.AZURE_SPEECH_KEY;
@@ -22,13 +26,12 @@ const httpTrigger: AzureFunction = async function (
 
   if (!speechKey || !speechRegion) {
     context.log.error("Missing credentials");
-    context.res = {
+    return {
       status: 500,
-      body: {
+      jsonBody: {
         error: "Speech key or region not configured"
       } as ErrorResponse
     };
-    return;
   }
 
   try {
@@ -44,8 +47,8 @@ const httpTrigger: AzureFunction = async function (
     );
 
     context.log("Token retrieved successfully");
-    context.res = {
-      body: {
+    return {
+      jsonBody: {
         token: response.data,
         region: speechRegion
       } as TokenResponse
@@ -66,18 +69,14 @@ const httpTrigger: AzureFunction = async function (
     } else if (error instanceof Error) {
       errorMessage = error.message;
       context.log.error("Token error:", error.message);
-    } else {
-      context.log.error("Token error:", error);
     }
 
-    context.res = {
+    return {
       status: 500,
-      body: {
+      jsonBody: {
         error: errorMessage,
         details: errorDetails
       } as ErrorResponse
     };
   }
-};
-
-export default httpTrigger;
+}

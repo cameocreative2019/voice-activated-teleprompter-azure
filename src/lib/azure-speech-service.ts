@@ -77,8 +77,8 @@ export class AzureSpeechService {
       speechConfig.setServiceProperty(
         "punctuation",
         "none",
-        "ServicePropertyChannel.UriQueryParameter"
-      );
+        ServicePropertyChannel.UriQueryParameter
+        );
 
       const audioConfig = AudioConfig.fromDefaultMicrophoneInput();
       return new SpeechRecognizer(speechConfig, audioConfig);

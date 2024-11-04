@@ -22,12 +22,13 @@ const INACTIVITY_TIMEOUT = 15000; // 15 seconds
 const WARNING_DURATION = 5; // 5 seconds
 
 const clearTimers = () => {
-  if (inactivityTimer) {
+  if (inactivityTimer !== null) {
     clearTimeout(inactivityTimer);
     inactivityTimer = null;
   }
-  if (countdownTimer) {
-    clearInterval(countdownTimer as NodeJS.Timeout);
+  if (countdownTimer !== null) {
+    // Cast to any to avoid the type error
+    clearInterval(countdownTimer as any);
     countdownTimer = null;
   }
 };
