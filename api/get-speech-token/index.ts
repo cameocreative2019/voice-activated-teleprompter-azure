@@ -1,7 +1,6 @@
 import {
   HttpRequest,
-  HttpResponseInit,
-  InvocationContext
+  Context
 } from "@azure/functions";
 import axios, { AxiosError } from "axios";
 
@@ -15,10 +14,10 @@ interface ErrorResponse {
   details?: unknown;
 }
 
-export async function httpTrigger(
-  request: HttpRequest,
-  context: InvocationContext
-): Promise<HttpResponseInit> {
+export default async function httpTrigger(
+  context: Context,
+  req: HttpRequest
+): Promise<void> {
   context.log("Token request received");
 
   const speechKey = process.env.AZURE_SPEECH_KEY;
@@ -26,12 +25,13 @@ export async function httpTrigger(
 
   if (!speechKey || !speechRegion) {
     context.log.error("Missing credentials");
-    return {
+    context.res = {
       status: 500,
-      jsonBody: {
+      body: {
         error: "Speech key or region not configured"
       } as ErrorResponse
     };
+    return;
   }
 
   try {
@@ -47,8 +47,8 @@ export async function httpTrigger(
     );
 
     context.log("Token retrieved successfully");
-    return {
-      jsonBody: {
+    context.res = {
+      body: {
         token: response.data,
         region: speechRegion
       } as TokenResponse
@@ -71,9 +71,9 @@ export async function httpTrigger(
       context.log.error("Token error:", error.message);
     }
 
-    return {
+    context.res = {
       status: 500,
-      jsonBody: {
+      body: {
         error: errorMessage,
         details: errorDetails
       } as ErrorResponse
