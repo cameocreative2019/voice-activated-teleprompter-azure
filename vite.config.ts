@@ -12,29 +12,12 @@ export default defineConfig({
     sourcemap: true,
     rollupOptions: {
       input: {
-        main: resolve(__dirname, 'index.html'),
+        main: resolve(__dirname, 'index.html')
       },
       output: {
         entryFileNames: 'assets/[name].[hash].js',
         chunkFileNames: 'assets/[name].[hash].js',
-        assetFileNames: 'assets/[name].[hash].[ext]',
-        format: 'es',
-        manualChunks: (id) => {
-          if (id.includes('node_modules')) {
-            return 'vendor'
-          }
-        }
-      }
-    },
-    modulePreload: {
-      polyfill: true
-    },
-    target: 'esnext',
-    minify: 'terser',
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
+        assetFileNames: 'assets/[name].[hash].[ext]'
       }
     }
   },
@@ -62,7 +45,6 @@ export default defineConfig({
   resolve: {
     alias: {
       bulma: resolve(__dirname, "node_modules/bulma/bulma.sass"),
-    },
-    extensions: ['.mjs', '.js', '.ts', '.jsx', '.tsx', '.json']
+    }
   }
 })
