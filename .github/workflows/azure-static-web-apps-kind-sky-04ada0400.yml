@@ -19,6 +19,10 @@ jobs:
         with:
           submodules: true
           lfs: false
+      - name: Build App
+        run: |
+          npm install
+          npm run build
       - name: List dist directory contents
         run: |
           ls -la dist
