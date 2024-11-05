@@ -4,6 +4,7 @@ import { Provider } from "react-redux"
 import App from "./App"
 import { store } from "./app/store"
 import "./index.scss"
+import 'react-tooltip/dist/react-tooltip.css';
 
 const container = document.getElementById("root")
 

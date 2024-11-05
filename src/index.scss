@@ -630,3 +630,34 @@ div.content {
 [data-tooltip] {
   transition: opacity 0.1s ease-in-out;
 }
+
+/* React Tooltip Styles */
+:root {
+  --rt-color-dark: rgba(0, 0, 0, 0.9);
+  --rt-color-white: #fff;
+}
+
+.react-tooltip {
+  background-color: var(--rt-color-dark) !important;
+  border-radius: 6px !important;
+  padding: 8px 16px !important;
+  font-size: 0.875rem !important;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000 !important;
+
+  &.show {
+    opacity: 1 !important;
+  }
+
+  &.hide {
+    opacity: 0 !important;
+  }
+}
+
+/* Fix tooltip position relative to navbar */
+.navbar {
+  .button[data-tooltip-id] {
+    position: relative;
+  }
+}

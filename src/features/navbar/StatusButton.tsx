@@ -131,6 +131,7 @@ export const StatusButton = ({ onClick, disabled, className = '' }: StatusButton
         onClick={onClick}
         disabled={disabled || ['connecting', 'error'].includes(buttonState)}
         data-tooltip-id="status-tooltip"
+        data-tooltip-content={getTooltipContent()}
       >
         {getButtonContent()}
       </button>
@@ -138,8 +139,14 @@ export const StatusButton = ({ onClick, disabled, className = '' }: StatusButton
       <Tooltip
         id="status-tooltip"
         place="top"
-        content={getTooltipContent()}
-        isOpen={!!getTooltipContent()}
+        className="status-tooltip"
+        classNameArrow="status-tooltip-arrow"
+        openOnClick={false}
+        style={{
+          backgroundColor: 'rgba(0, 0, 0, 0.9)',
+          borderRadius: '6px',
+          fontSize: '0.875rem'
+        }}
       />
     </>
   );
