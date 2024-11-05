@@ -572,3 +572,61 @@ div.content {
   }
 }
 
+/* Add these styles to your index.scss file */
+
+.button {
+  /* Add transition for all button state changes */
+  transition: all 0.1s ease-in-out;
+
+  &.is-custom-start {
+    transition: all 0.1s ease-in-out;
+
+    /* Ensure icon and text transitions are smooth */
+    .icon-text {
+      transition: all 0.1s ease-in-out;
+
+      .icon {
+        transition: all 0.1s ease-in-out;
+      }
+
+      span {
+        transition: all 0.1s ease-in-out;
+      }
+    }
+  }
+}
+
+/* Smooth transitions for status button states */
+.is-custom-start {
+  &.is-dark {
+    background-color: $button-disabled-background-color;
+    color: $grey-light;
+
+    &:hover {
+      background-color: lighten($button-disabled-background-color, 5%);
+    }
+  }
+
+  &.is-start {
+    background-color: $primary-purple;
+    color: $white;
+
+    &:hover {
+      background-color: darken($primary-purple, 5%);
+    }
+  }
+
+  &.is-stop {
+    background-color: $black;
+    color: $white;
+
+    &:hover {
+      background-color: lighten($black, 5%);
+    }
+  }
+}
+
+/* Ensure tooltip transitions are smooth */
+[data-tooltip] {
+  transition: opacity 0.1s ease-in-out;
+}

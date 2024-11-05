@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react"
 import { useAppDispatch, useAppSelector } from "../../app/hooks"
 import { startTeleprompter, stopTeleprompter } from "../../app/thunks"
+import { StatusButton } from './StatusButton'
 import {
   toggleQuickEdit,
   toggleEditor,
@@ -145,28 +146,14 @@ export const NavBar = () => {
       <div className="navbar-menu">
         <div className="navbar-start">
           <div className="buttons navbar-item">
-            <button
-              className={`button is-custom-start ${
-                status === "stopped" || isEditing ? "is-start" : "is-stop"
-              }`}
-              disabled={isEditing}
+            <StatusButton
               onClick={() => {
                 handleAnyButtonClick()
                 dispatch(status === "stopped" ? startTeleprompter() : stopTeleprompter())
                 if (showSettings) dispatch(toggleSettings())
               }}
-            >
-              <span className="icon-text">
-                <span className="icon is-small">
-                  <i
-                    className={`fa-solid ${
-                      status === "stopped" || isEditing ? "fa-play" : "fa-stop"
-                    }`}
-                  />
-                </span>
-                <span>{status === "stopped" || isEditing ? "Start" : "Stop"}</span>
-              </span>
-            </button>
+              disabled={isEditing}
+            />
 
             {status !== "started" && (
               <>
