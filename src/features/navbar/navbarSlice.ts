@@ -29,8 +29,8 @@ const getSavedSettings = () => {
     return JSON.parse(savedSettings)
   }
   return {
-    fontSize: 115,
-    margin: 350,
+    fontSize: 80,
+    margin: 290,
     opacity: 100,
     readLinePosition: 90,
     horizontallyFlipped: false,
