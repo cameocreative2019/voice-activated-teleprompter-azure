@@ -1,3 +1,4 @@
+// src/app/store.ts
 import type { Action, ThunkAction } from "@reduxjs/toolkit"
 import { combineSlices, configureStore } from "@reduxjs/toolkit"
 import { setupListeners } from "@reduxjs/toolkit/query"
@@ -5,14 +6,16 @@ import { navbarSlice } from "../features/navbar/navbarSlice"
 import { contentSlice } from "../features/content/contentSlice"
 import { scrollSlice } from "../features/scroll/scrollSlice"
 import { tokenSlice } from "../features/token/tokenSlice"
+import { microphoneSlice } from "../features/microphone/microphoneSlice"
 
 // `combineSlices` automatically combines the reducers using
-// their `reducerPath`s, therefore we no longer need to call `combineReducers`.
+// their `reducerPath`s
 const rootReducer = combineSlices(
   navbarSlice,
   contentSlice,
   scrollSlice,
-  tokenSlice  // Add the new tokenSlice
+  tokenSlice,
+  microphoneSlice
 )
 
 // Infer the `RootState` type from the root reducer

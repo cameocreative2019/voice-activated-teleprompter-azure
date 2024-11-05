@@ -2,31 +2,45 @@ import type { PayloadAction } from "@reduxjs/toolkit"
 import { createAppSlice } from "../../app/createAppSlice"
 
 interface SavedSettings {
-  fontSize: number
-  margin: number
-  readLinePosition: number
+  fontSize: number;
+  margin: number;
+  readLinePosition: number;
+  microphoneDeviceId?: string | null;
+  lastKnownMicName?: string | null;
 }
 
 export interface NavBarSliceState {
-  status: "editing" | "editorMode" | "started" | "stopped"
-  showSettings: boolean
-  horizontallyFlipped: boolean
-  verticallyFlipped: boolean
-  fontSize: number
-  margin: number
-  opacity: number
-  readLinePosition: number
-  savedSettings: SavedSettings | null
-  showTimeoutWarning: boolean
-  timeoutCountdown: number | null
-  lastProgressTimestamp: number | null
+  status: "editing" | "editorMode" | "started" | "stopped";
+  showSettings: boolean;
+  horizontallyFlipped: boolean;
+  verticallyFlipped: boolean;
+  fontSize: number;
+  margin: number;
+  opacity: number;
+  readLinePosition: number;
+  savedSettings: SavedSettings | null;
+  showTimeoutWarning: boolean;
+  timeoutCountdown: number | null;
+  lastProgressTimestamp: number | null;
+  microphoneDeviceId: string | null;
+  lastKnownMicName: string | null;
 }
 
 // Get settings from localStorage or use defaults
 const getSavedSettings = () => {
   const savedSettings = localStorage.getItem('appSettings')
   if (savedSettings) {
-    return JSON.parse(savedSettings)
+    const settings = JSON.parse(savedSettings)
+    return {
+      fontSize: settings.fontSize ?? 80,
+      margin: settings.margin ?? 290,
+      opacity: settings.opacity ?? 100,
+      readLinePosition: settings.readLinePosition ?? 90,
+      horizontallyFlipped: settings.horizontallyFlipped ?? false,
+      verticallyFlipped: settings.verticallyFlipped ?? false,
+      microphoneDeviceId: settings.microphoneDeviceId ?? null,
+      lastKnownMicName: settings.lastKnownMicName ?? null
+    }
   }
   return {
     fontSize: 80,
@@ -34,7 +48,9 @@ const getSavedSettings = () => {
     opacity: 100,
     readLinePosition: 90,
     horizontallyFlipped: false,
-    verticallyFlipped: false
+    verticallyFlipped: false,
+    microphoneDeviceId: null,
+    lastKnownMicName: null
   }
 }
 
@@ -53,6 +69,8 @@ const initialState: NavBarSliceState = {
   showTimeoutWarning: false,
   timeoutCountdown: null,
   lastProgressTimestamp: null,
+  microphoneDeviceId: defaultSettings.microphoneDeviceId,
+  lastKnownMicName: defaultSettings.lastKnownMicName
 }
 
 // Helper function to save settings to localStorage
@@ -63,7 +81,9 @@ const saveSettingsToStorage = (state: NavBarSliceState) => {
     opacity: state.opacity,
     readLinePosition: state.readLinePosition,
     horizontallyFlipped: state.horizontallyFlipped,
-    verticallyFlipped: state.verticallyFlipped
+    verticallyFlipped: state.verticallyFlipped,
+    microphoneDeviceId: state.microphoneDeviceId,
+    lastKnownMicName: state.lastKnownMicName
   }
   localStorage.setItem('appSettings', JSON.stringify(settingsToSave))
 }
@@ -153,6 +173,18 @@ export const navbarSlice = createAppSlice({
       saveSettingsToStorage(state)
     }),
 
+    setMicrophone: create.reducer((state, action: PayloadAction<{ deviceId: string; deviceName: string }>) => {
+      state.microphoneDeviceId = action.payload.deviceId;
+      state.lastKnownMicName = action.payload.deviceName;
+      saveSettingsToStorage(state)
+    }),
+
+    resetMicrophone: create.reducer(state => {
+      state.microphoneDeviceId = null;
+      state.lastKnownMicName = null;
+      saveSettingsToStorage(state)
+    }),
+
     resetToDefaults: create.reducer(state => {
       state.fontSize = 115
       state.margin = 350
@@ -160,6 +192,8 @@ export const navbarSlice = createAppSlice({
       state.readLinePosition = 90
       state.horizontallyFlipped = false
       state.verticallyFlipped = false
+      state.microphoneDeviceId = null
+      state.lastKnownMicName = null
       localStorage.removeItem('appSettings')
     }),
 
@@ -203,6 +237,8 @@ export const navbarSlice = createAppSlice({
     selectShowTimeoutWarning: state => state.showTimeoutWarning,
     selectTimeoutCountdown: state => state.timeoutCountdown,
     selectLastProgressTimestamp: state => state.lastProgressTimestamp,
+    selectMicrophoneDeviceId: state => state.microphoneDeviceId,
+    selectLastKnownMicName: state => state.lastKnownMicName
   },
 })
 
@@ -218,6 +254,8 @@ export const {
   setMargin,
   setOpacity,
   setReadLinePosition,
+  setMicrophone,
+  resetMicrophone,
   resetToDefaults,
   updateLastProgress,
   startTimeoutWarning,
@@ -238,4 +276,6 @@ export const {
   selectShowTimeoutWarning,
   selectTimeoutCountdown,
   selectLastProgressTimestamp,
+  selectMicrophoneDeviceId,
+  selectLastKnownMicName
 } = navbarSlice.selectors

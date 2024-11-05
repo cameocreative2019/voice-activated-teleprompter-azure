@@ -2,6 +2,9 @@ import { useEffect, useState } from "react"
 import { useAppDispatch, useAppSelector } from "../../app/hooks"
 import { startTeleprompter, stopTeleprompter } from "../../app/thunks"
 import { StatusButton } from './StatusButton'
+import { MicrophoneButton } from "../microphone/MicrophoneButton"
+import { MicrophoneSelector } from "../microphone/MicrophoneSelector"
+import { setDevices, setError } from "../microphone/microphoneSlice"
 import {
   toggleQuickEdit,
   toggleEditor,
@@ -22,7 +25,7 @@ import { resetTranscriptionIndices, clearContent } from "../content/contentSlice
 import { setSavedPosition } from "../scroll/scrollSlice"
 import SettingsControl from "./SettingsControl"
 
-// Default values
+// Default values remain the same
 const DEFAULT_VALUES = {
   fontSize: 100,
   margin: 350,
@@ -44,6 +47,7 @@ interface SettingValue {
 export const NavBar = () => {
   const dispatch = useAppDispatch()
   const [shouldPulse, setShouldPulse] = useState(true)
+  const [showMicSelector, setShowMicSelector] = useState(false)
 
   const status = useAppSelector(selectStatus)
   const showSettings = useAppSelector(selectShowSettings)
@@ -51,6 +55,35 @@ export const NavBar = () => {
   const margin = useAppSelector(selectMargin)
   const opacity = useAppSelector(selectOpacity)
   const readLinePosition = useAppSelector(selectReadLinePosition)
+
+  // Handle microphone device enumeration and monitoring
+  useEffect(() => {
+  const updateDevices = async () => {
+    try {
+      // Request microphone permission first
+      await navigator.mediaDevices.getUserMedia({ audio: true });
+      const devices = await navigator.mediaDevices.enumerateDevices();
+      const audioInputs = devices.filter(device => device.kind === 'audioinput');
+      dispatch(setDevices({
+        devices: audioInputs,
+        currentStatus: status // Pass current status
+      }));
+    } catch (error) {
+      console.error('Microphone access error:', error);
+      dispatch(setError('Microphone access denied'));
+    }
+  };
+
+  // Initial device enumeration
+  updateDevices();
+
+  // Listen for device changes
+  navigator.mediaDevices.addEventListener('devicechange', updateDevices);
+
+  return () => {
+    navigator.mediaDevices.removeEventListener('devicechange', updateDevices);
+  };
+}, [dispatch, status]); // Add status to dependencies
 
   useEffect(() => {
     const hasClickedButton = localStorage.getItem('hasClickedButton')
@@ -136,127 +169,141 @@ export const NavBar = () => {
   ]
 
   return (
-    <nav
-      className={`navbar is-black has-text-light is-unselectable is-fixed-bottom is-floating-bottom ${
-        status === "started" ? "started" : ""
-      }`}
-      role="navigation"
-      aria-label="main navigation"
-    >
-      <div className="navbar-menu">
-        <div className="navbar-start">
-          <div className="buttons navbar-item">
-            <StatusButton
-              onClick={() => {
-                handleAnyButtonClick()
-                dispatch(status === "stopped" ? startTeleprompter() : stopTeleprompter())
-                if (showSettings) dispatch(toggleSettings())
-              }}
-              disabled={isEditing}
-            />
-
-            {status !== "started" && (
-              <>
-                <button
-                  className="button"
-                  disabled={status !== "stopped"}
-                  onClick={() => {
-                    handleAnyButtonClick()
-                    dispatch(resetTranscriptionIndices())
-                  }}
-                >
-                  <span className="icon-text">
-                    <span className="icon is-small">
-                      <i className="fa-solid fa-arrows-rotate" />
-                    </span>
-                    <span>Restart</span>
-                  </span>
-                </button>
-
-                <button
-                  className={`button ${status === "editing" ? "editing" : ""}`}
-                  disabled={status === "editorMode"}
-                  onClick={() => {
-                    handleAnyButtonClick()
-                    handleQuickEdit()
-                  }}
-                >
-                  <span className="icon-text">
-                    <span className="icon is-small">
-                      <i className="fa-solid fa-pencil" />
-                    </span>
-                    <span>Quick Edit</span>
-                  </span>
-                </button>
-
-                <button
-                  className={`button ${status === "editorMode" ? "editing" : ""} ${
-                    shouldPulse ? "editor-pulse" : ""
-                  }`}
-                  disabled={status === "editing"}
-                  onClick={() => {
-                    handleAnyButtonClick()
-                    dispatch(toggleEditor())
-                    if (showSettings) dispatch(toggleSettings())
-                  }}
-                >
-                  <span className="icon-text">
-                    <span className="icon is-small">
-                      <i className="fa-solid fa-edit" />
-                    </span>
-                    <span>Editor</span>
-                  </span>
-                </button>
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="navbar-end">
-          <div
-            className={`settings-controls ${showSettings && status === "stopped" ? "visible" : ""}`}
-          >
-            {settingsControls.map((control, index) => (
-              <SettingsControl
-                key={index}
-                {...control}
+    <>
+      <nav
+        className={`navbar is-black has-text-light is-unselectable is-fixed-bottom is-floating-bottom ${
+          status === "started" ? "started" : ""
+        }`}
+        role="navigation"
+        aria-label="main navigation"
+      >
+        <div className="navbar-menu">
+          <div className="navbar-start">
+            <div className="buttons navbar-item">
+              <StatusButton
+                onClick={() => {
+                  handleAnyButtonClick()
+                  dispatch(status === "stopped" ? startTeleprompter() : stopTeleprompter())
+                  if (showSettings) dispatch(toggleSettings())
+                }}
+                disabled={isEditing}
               />
-            ))}
 
-            <div className="settings-spacer"></div>
+              {status !== "started" && (
+                <>
+                  <button
+                    className="button"
+                    disabled={status !== "stopped"}
+                    onClick={() => {
+                      handleAnyButtonClick()
+                      dispatch(resetTranscriptionIndices())
+                    }}
+                  >
+                    <span className="icon-text">
+                      <span className="icon is-small">
+                        <i className="fa-solid fa-arrows-rotate" />
+                      </span>
+                      <span>Restart</span>
+                    </span>
+                  </button>
 
-            <button
-              className="button clear-storage-btn"
-              onClick={handleClearAll}
-              disabled={status !== "stopped"}
-            >
-              <span className="icon-text">
-                <span className="icon is-small">
-                  <i className="fa-solid fa-trash" />
-                </span>
-                <span>Reset Page</span>
-              </span>
-            </button>
+                  <button
+                    className={`button ${status === "editing" ? "editing" : ""}`}
+                    disabled={status === "editorMode"}
+                    onClick={() => {
+                      handleAnyButtonClick()
+                      handleQuickEdit()
+                    }}
+                  >
+                    <span className="icon-text">
+                      <span className="icon is-small">
+                        <i className="fa-solid fa-pencil" />
+                      </span>
+                      <span>Quick Edit</span>
+                    </span>
+                  </button>
+
+                  <button
+                    className={`button ${status === "editorMode" ? "editing" : ""} ${
+                      shouldPulse ? "editor-pulse" : ""
+                    }`}
+                    disabled={status === "editing"}
+                    onClick={() => {
+                      handleAnyButtonClick()
+                      dispatch(toggleEditor())
+                      if (showSettings) dispatch(toggleSettings())
+                    }}
+                  >
+                    <span className="icon-text">
+                      <span className="icon is-small">
+                        <i className="fa-solid fa-edit" />
+                      </span>
+                      <span>Editor</span>
+                    </span>
+                  </button>
+
+                  <MicrophoneButton
+                    onClick={() => {
+                      handleAnyButtonClick();
+                      setShowMicSelector(true);
+                    }}
+                  />
+                </>
+              )}
+            </div>
           </div>
 
-          {status !== "started" && (
-            <div className="navbar-item">
+          <div className="navbar-end">
+            <div
+              className={`settings-controls ${showSettings && status === "stopped" ? "visible" : ""}`}
+            >
+              {settingsControls.map((control, index) => (
+                <SettingsControl
+                  key={index}
+                  {...control}
+                />
+              ))}
+
+              <div className="settings-spacer"></div>
+
               <button
-                className={`button ${showSettings ? "is-active" : ""}`}
-                onClick={() => dispatch(toggleSettings())}
+                className="button clear-storage-btn"
+                onClick={handleClearAll}
                 disabled={status !== "stopped"}
               >
                 <span className="icon-text">
                   <span className="icon is-small">
-                    <i className="fa-solid fa-gear" />
+                    <i className="fa-solid fa-trash" />
                   </span>
-                  <span>Settings</span>
+                  <span>Reset Page</span>
                 </span>
               </button>
             </div>
-          )}
+
+            {status !== "started" && (
+              <div className="navbar-item">
+                <button
+                  className={`button ${showSettings ? "is-active" : ""}`}
+                  onClick={() => dispatch(toggleSettings())}
+                  disabled={status !== "stopped"}
+                >
+                  <span className="icon-text">
+                    <span className="icon is-small">
+                      <i className="fa-solid fa-gear" />
+                    </span>
+                    <span>Settings</span>
+                  </span>
+                </button>
+              </div>
+            )}
+          </div>
         </div>
-      </div>
-    </nav>
+      </nav>
+
+      <MicrophoneSelector
+        isOpen={showMicSelector}
+        onClose={() => setShowMicSelector(false)}
+      />
+    </>
   )
 }

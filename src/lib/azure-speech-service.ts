@@ -9,9 +9,15 @@ import {
   ServicePropertyChannel
 } from 'microsoft-cognitiveservices-speech-sdk';
 import { tokenManager } from '@/features/token/tokenManager';
+import { store } from '@/app/store';
+import { selectSelectedDeviceId } from '@/features/microphone/microphoneSlice';
+import { stopTeleprompter } from '@/app/thunks';
 
 export class AzureSpeechService {
   private recognizer: SpeechRecognizer | null = null;
+  private currentDeviceId: string | null = null;
+  private onFinalResultCallback: ((transcript: string) => void) | null = null;
+  private onInterimResultCallback: ((transcript: string) => void) | null = null;
 
   private async createRecognizer(): Promise<SpeechRecognizer> {
     try {
@@ -29,7 +35,17 @@ export class AzureSpeechService {
         ServicePropertyChannel.UriQueryParameter
       );
 
-      const audioConfig = AudioConfig.fromDefaultMicrophoneInput();
+      // Get the selected device ID from Redux store
+      const state = store.getState();
+      const selectedDeviceId = selectSelectedDeviceId(state);
+      this.currentDeviceId = selectedDeviceId;
+
+      // Create audio config with selected device
+      const audioConfig = selectedDeviceId
+        ? AudioConfig.fromMicrophoneInput(selectedDeviceId)
+        : AudioConfig.fromDefaultMicrophoneInput();
+
+      console.log(`Creating recognizer with ${selectedDeviceId ? 'selected' : 'default'} microphone`);
       return new SpeechRecognizer(speechConfig, audioConfig);
     } catch (error) {
       console.error('Failed to create recognizer:', error);
@@ -43,7 +59,15 @@ export class AzureSpeechService {
   ): Promise<void> {
     try {
       console.log('Starting speech recognition...');
+
+      // Store callbacks for potential reconnection
+      this.onFinalResultCallback = onFinalResult;
+      this.onInterimResultCallback = onInterimResult;
+
       this.recognizer = await this.createRecognizer();
+
+      // Set up device change monitoring
+      navigator.mediaDevices.addEventListener('devicechange', this.handleDeviceChange);
 
       // Handle interim results
       this.recognizer.recognizing = (_, event) => {
@@ -74,7 +98,14 @@ export class AzureSpeechService {
             await this.stop();
             await tokenManager.refreshToken();
             await this.start(onFinalResult, onInterimResult);
+          } else if (event.errorCode === CancellationErrorCode.ConnectionFailure) {
+            // Handle microphone connection failures
+            console.error('Microphone connection failure detected');
+            store.dispatch(stopTeleprompter());
           }
+        } else if (event.reason === CancellationReason.EndOfStream) {
+          console.log('End of stream detected');
+          store.dispatch(stopTeleprompter());
         }
       };
 
@@ -97,12 +128,43 @@ export class AzureSpeechService {
     }
   }
 
+  private handleDeviceChange = async () => {
+    // Get current device selection from Redux
+    const state = store.getState();
+    const selectedDeviceId = selectSelectedDeviceId(state);
+
+    // If device changed while recognition is active
+    if (this.recognizer && this.currentDeviceId !== selectedDeviceId) {
+      console.log('Microphone changed, restarting recognition...');
+      await this.stop();
+
+      // Only attempt restart if we have the callbacks stored
+      if (this.onFinalResultCallback && this.onInterimResultCallback) {
+        try {
+          await this.start(this.onFinalResultCallback, this.onInterimResultCallback);
+        } catch (error) {
+          console.error('Failed to restart recognition after device change:', error);
+          store.dispatch(stopTeleprompter());
+        }
+      }
+    }
+  };
+
   async stop(): Promise<void> {
     if (this.recognizer) {
       try {
         console.log('Stopping speech recognition...');
+
+        // Remove device change listener
+        navigator.mediaDevices.removeEventListener('devicechange', this.handleDeviceChange);
+
+        // Clear callbacks
+        this.onFinalResultCallback = null;
+        this.onInterimResultCallback = null;
+
         await this.recognizer.stopContinuousRecognitionAsync();
         this.recognizer = null;
+        this.currentDeviceId = null;
         console.log('Speech recognition stopped successfully');
       } catch (error) {
         console.error('Error stopping speech recognition:', error);
@@ -112,7 +174,17 @@ export class AzureSpeechService {
       console.log('No active recognizer to stop');
     }
   }
+
+  // Method to check if recognition is active
+  isRecognizing(): boolean {
+    return this.recognizer !== null;
+  }
+
+  // Method to get current device ID
+  getCurrentDeviceId(): string | null {
+    return this.currentDeviceId;
+  }
 }
 
-// Create singleton instance
+// Export singleton instance
 export const azureSpeechService = new AzureSpeechService();
