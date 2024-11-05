@@ -23,7 +23,7 @@ import SettingsControl from "./SettingsControl"
 
 // Default values
 const DEFAULT_VALUES = {
-  fontSize: 115,
+  fontSize: 100,
   margin: 350,
   opacity: 100,
   readLinePosition: 90,

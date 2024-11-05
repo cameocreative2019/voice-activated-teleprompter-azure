@@ -4,10 +4,16 @@ import { setupListeners } from "@reduxjs/toolkit/query"
 import { navbarSlice } from "../features/navbar/navbarSlice"
 import { contentSlice } from "../features/content/contentSlice"
 import { scrollSlice } from "../features/scroll/scrollSlice"
+import { tokenSlice } from "../features/token/tokenSlice"
 
 // `combineSlices` automatically combines the reducers using
 // their `reducerPath`s, therefore we no longer need to call `combineReducers`.
-const rootReducer = combineSlices(navbarSlice, contentSlice, scrollSlice)
+const rootReducer = combineSlices(
+  navbarSlice,
+  contentSlice,
+  scrollSlice,
+  tokenSlice  // Add the new tokenSlice
+)
 
 // Infer the `RootState` type from the root reducer
 export type RootState = ReturnType<typeof rootReducer>
@@ -20,7 +26,6 @@ export const makeStore = (preloadedState?: Partial<RootState>) => {
     preloadedState,
   })
   // configure listeners using the provided defaults
-  // optional, but required for `refetchOnFocus`/`refetchOnReconnect` behaviors
   setupListeners(store.dispatch)
   return store
 }

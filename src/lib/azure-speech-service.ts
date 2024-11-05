@@ -5,70 +5,18 @@ import {
   ResultReason,
   Recognizer,
   CancellationReason,
-  CancellationErrorCode
+  CancellationErrorCode,
+  ServicePropertyChannel
 } from 'microsoft-cognitiveservices-speech-sdk';
-import axios from 'axios';
-import Cookies from 'universal-cookie';
-import { ServicePropertyChannel } from 'microsoft-cognitiveservices-speech-sdk';
-
-interface TokenResponse {
-  token: string;
-  region: string;
-}
+import { tokenManager } from '@/features/token/tokenManager';
 
 export class AzureSpeechService {
   private recognizer: SpeechRecognizer | null = null;
-  private cookies = new Cookies();
-
-  private async getTokenOrRefresh(): Promise<TokenResponse> {
-    const cookieToken = this.cookies.get('azure-token');
-
-    if (cookieToken) {
-      return cookieToken;
-    }
-
-    try {
-      console.log('Requesting new token...');
-      const response = await axios.get<TokenResponse>('/api/get-speech-token', {
-        validateStatus: (status) => true, // Always resolve promise to see response
-        timeout: 5000, // 5 second timeout
-      });
-
-      console.log('Token response status:', response.status);
-
-      if (response.status !== 200) {
-        console.error('Token response error:', response.data);
-        throw new Error(`Failed to get token: ${response.status}`);
-      }
-
-      const { token, region } = response.data;
-
-      // Set cookie to expire in 9 minutes (token expires in 10)
-      this.cookies.set('azure-token', { token, region }, { maxAge: 540 });
-
-      return { token, region };
-    } catch (error) {
-      if (axios.isAxiosError(error)) {
-        console.error('Token request failed:', {
-          message: error.message,
-          status: error.response?.status,
-          data: error.response?.data,
-          config: {
-            url: error.config?.url,
-            method: error.config?.method,
-          }
-        });
-      } else {
-        console.error('Token request failed:', error);
-      }
-      throw error;
-    }
-  }
 
   private async createRecognizer(): Promise<SpeechRecognizer> {
     try {
       console.log('Creating recognizer...');
-      const { token, region } = await this.getTokenOrRefresh();
+      const { token, region } = await tokenManager.getToken();
 
       console.log('Configuring speech service with region:', region);
       const speechConfig = SpeechConfig.fromAuthorizationToken(token, region);
@@ -79,7 +27,7 @@ export class AzureSpeechService {
         "punctuation",
         "none",
         ServicePropertyChannel.UriQueryParameter
-        );
+      );
 
       const audioConfig = AudioConfig.fromDefaultMicrophoneInput();
       return new SpeechRecognizer(speechConfig, audioConfig);
@@ -116,17 +64,16 @@ export class AzureSpeechService {
       };
 
       // Handle errors
-      this.recognizer.canceled = (_, event) => {
+      this.recognizer.canceled = async (_, event) => {
         if (event.reason === CancellationReason.Error) {
           console.error(`Speech recognition error: ${event.errorCode} - ${event.errorDetails}`);
 
-          // If token expired, clear cookie and retry
+          // If token expired, refresh token and retry
           if (event.errorCode === CancellationErrorCode.AuthenticationFailure) {
-            console.log('Authentication failure detected, clearing token and retrying...');
-            this.cookies.remove('azure-token');
-            this.stop().then(() => {
-              this.start(onFinalResult, onInterimResult);
-            });
+            console.log('Authentication failure detected, refreshing token and retrying...');
+            await this.stop();
+            await tokenManager.refreshToken();
+            await this.start(onFinalResult, onInterimResult);
           }
         }
       };
