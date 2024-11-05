@@ -24,8 +24,8 @@ import {
 } from "./navbarSlice"
 import { resetTranscriptionIndices, clearContent } from "../content/contentSlice"
 import { setSavedPosition } from "../scroll/scrollSlice"
+import { RotateCcw } from "lucide-react"
 
-// Default values remain the same
 const DEFAULT_VALUES = {
   fontSize: 100,
   margin: 350,
@@ -56,11 +56,9 @@ export const NavBar = () => {
   const opacity = useAppSelector(selectOpacity)
   const readLinePosition = useAppSelector(selectReadLinePosition)
 
-  // Handle microphone device enumeration and monitoring
   useEffect(() => {
     const updateDevices = async () => {
       try {
-        // Request microphone permission first
         await navigator.mediaDevices.getUserMedia({ audio: true });
         const devices = await navigator.mediaDevices.enumerateDevices();
         const audioInputs = devices.filter(device => device.kind === 'audioinput');
@@ -74,12 +72,8 @@ export const NavBar = () => {
       }
     };
 
-    // Initial device enumeration
     updateDevices();
-
-    // Listen for device changes
     navigator.mediaDevices.addEventListener('devicechange', updateDevices);
-
     return () => {
       navigator.mediaDevices.removeEventListener('devicechange', updateDevices);
     };
@@ -111,20 +105,75 @@ export const NavBar = () => {
     }
   }
 
-  const isEditing = status === "editing" || status === "editorMode"
+  const handleStart = () => {
+    handleAnyButtonClick()
+
+    // First exit any editing modes
+    if (status === "editing") {
+      dispatch(toggleQuickEdit())
+    } else if (status === "editorMode") {
+      dispatch(toggleEditor())
+    }
+
+    // Then start the teleprompter
+    dispatch(startTeleprompter())
+
+    if (showSettings) {
+      dispatch(toggleSettings())
+    }
+  }
+
+  const handleStop = () => {
+    handleAnyButtonClick()
+    dispatch(stopTeleprompter())
+    if (showSettings) {
+      dispatch(toggleSettings())
+    }
+  }
+
+  const handleRestart = () => {
+    handleAnyButtonClick()
+    // Reset transcript indices
+    dispatch(resetTranscriptionIndices())
+    // Scroll to top smoothly
+    const contentElement = document.querySelector('.content')
+    if (contentElement) {
+      contentElement.scrollTo({
+        top: 0,
+        behavior: 'smooth'
+      })
+    }
+    // Set saved position to 0 for consistency
+    dispatch(setSavedPosition(0))
+  }
 
   const handleQuickEdit = () => {
     handleAnyButtonClick()
+    if (status === "editorMode") {
+      dispatch(toggleEditor())
+    }
     const contentElement = document.querySelector('.content')
     if (contentElement) {
       const currentScroll = contentElement.scrollTop
       dispatch(setSavedPosition(currentScroll))
     }
     dispatch(toggleQuickEdit())
-    if (showSettings) dispatch(toggleSettings())
+    if (showSettings) {
+      dispatch(toggleSettings())
+    }
   }
 
-  // Define settings controls configuration
+  const handleEditorMode = () => {
+    handleAnyButtonClick()
+    if (status === "editing") {
+      dispatch(toggleQuickEdit())
+    }
+    dispatch(toggleEditor())
+    if (showSettings) {
+      dispatch(toggleSettings())
+    }
+  }
+
   const settingsControls: SettingValue[] = [
     {
       label: "Brightness",
@@ -181,23 +230,28 @@ export const NavBar = () => {
           <div className="navbar-start">
             <div className="buttons navbar-item">
               <StatusButton
-                onClick={() => {
-                  handleAnyButtonClick()
-                  dispatch(status === "stopped" ? startTeleprompter() : stopTeleprompter())
-                  if (showSettings) dispatch(toggleSettings())
-                }}
-                disabled={isEditing}
+                onClick={status === "started" ? handleStop : handleStart}
               />
+
+              {status === "stopped" && (
+                <button
+                  className="button"
+                  onClick={handleRestart}
+                >
+                  <span className="icon-text">
+                    <span className="icon is-small">
+                      <RotateCcw size={16} />
+                    </span>
+                    <span>Restart</span>
+                  </span>
+                </button>
+              )}
 
               {status !== "started" && (
                 <>
                   <button
                     className={`button ${status === "editing" ? "editing" : ""}`}
-                    disabled={status === "editorMode"}
-                    onClick={() => {
-                      handleAnyButtonClick()
-                      handleQuickEdit()
-                    }}
+                    onClick={() => handleQuickEdit()}
                   >
                     <span className="icon-text">
                       <span className="icon is-small">
@@ -211,12 +265,7 @@ export const NavBar = () => {
                     className={`button ${status === "editorMode" ? "editing" : ""} ${
                       shouldPulse ? "editor-pulse" : ""
                     }`}
-                    disabled={status === "editing"}
-                    onClick={() => {
-                      handleAnyButtonClick()
-                      dispatch(toggleEditor())
-                      if (showSettings) dispatch(toggleSettings())
-                    }}
+                    onClick={() => handleEditorMode()}
                   >
                     <span className="icon-text">
                       <span className="icon is-small">
@@ -243,7 +292,6 @@ export const NavBar = () => {
                   <button
                     className={`button ${showSettings ? "is-active" : ""}`}
                     onClick={() => dispatch(toggleSettings())}
-                    disabled={status !== "stopped"}
                   >
                     <span className="icon-text">
                       <span className="icon is-small">
@@ -259,7 +307,7 @@ export const NavBar = () => {
         </div>
 
         <SettingsPanel
-          isVisible={showSettings && status === "stopped"}
+          isVisible={showSettings && status !== "started"}
           settingsControls={settingsControls}
           onClearAll={handleClearAll}
         />

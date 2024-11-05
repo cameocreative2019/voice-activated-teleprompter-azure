@@ -92,6 +92,22 @@ export const navbarSlice = createAppSlice({
   name: "navbar",
   initialState,
   reducers: create => ({
+    exitQuickEdit: create.reducer(state => {
+      state.status = "stopped"
+    }),
+
+    exitEditor: create.reducer(state => {
+      // Restore previous settings
+      if (state.savedSettings) {
+        state.fontSize = state.savedSettings.fontSize
+        state.margin = state.savedSettings.margin
+        state.readLinePosition = state.savedSettings.readLinePosition
+        state.savedSettings = null
+      }
+      state.status = "stopped"
+      saveSettingsToStorage(state)
+    }),
+
     toggleQuickEdit: create.reducer(state => {
       if (state.status === "editing") {
         state.status = "stopped"
@@ -245,6 +261,8 @@ export const navbarSlice = createAppSlice({
 export const {
   toggleQuickEdit,
   toggleEditor,
+  exitQuickEdit,
+  exitEditor,
   toggleSettings,
   start,
   stop,

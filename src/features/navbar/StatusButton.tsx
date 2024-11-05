@@ -1,3 +1,4 @@
+// StatusButton.tsx
 import React, { useState, useEffect } from 'react';
 import { Loader, X, Play, Square } from 'lucide-react';
 import { Tooltip } from 'react-tooltip';
@@ -8,15 +9,13 @@ export type ButtonState = 'connecting' | 'error' | 'ready' | 'starting' | 'activ
 
 interface StatusButtonProps {
   onClick: () => void;
-  disabled?: boolean;
   className?: string;
 }
 
-export const StatusButton = ({ onClick, disabled, className = '' }: StatusButtonProps) => {
+export const StatusButton = ({ onClick, className = '' }: StatusButtonProps) => {
   const [buttonState, setButtonState] = useState<ButtonState>('connecting');
   const hasContent = useAppSelector(selectHasContent);
 
-  // Monitor console logs for state changes
   useEffect(() => {
     const originalConsoleLog = console.log;
     const originalConsoleError = console.error;
@@ -25,17 +24,14 @@ export const StatusButton = ({ onClick, disabled, className = '' }: StatusButton
       originalConsoleLog.apply(console, args);
       const logMessage = args.join(' ');
 
-      // Connecting State
       if (logMessage.includes('Initializing token manager') ||
           logMessage.includes('Requesting new token')) {
         setButtonState('connecting');
       }
-      // Ready State
       else if (logMessage.includes('Token retrieved successfully') ||
-                logMessage.includes('Speech recognition session stopped')) {
+               logMessage.includes('Speech recognition session stopped')) {
         setButtonState('ready');
       }
-      // Starting State
       else if (logMessage.includes('Starting speech recognition') ||
                logMessage.includes('Creating recognizer') ||
                logMessage.includes('Stopping speech recognition...') ||
@@ -43,7 +39,6 @@ export const StatusButton = ({ onClick, disabled, className = '' }: StatusButton
                logMessage.includes('Starting continuous recognition')) {
         setButtonState('starting');
       }
-      // Active State
       else if (logMessage.includes('Speech recognition session started')) {
         setButtonState('active');
       }
@@ -58,7 +53,6 @@ export const StatusButton = ({ onClick, disabled, className = '' }: StatusButton
       }
     };
 
-    // Reset on page load
     setButtonState('connecting');
 
     return () => {
@@ -133,7 +127,7 @@ export const StatusButton = ({ onClick, disabled, className = '' }: StatusButton
 
   const handleClick = () => {
     if (!hasContent && buttonState === 'ready') {
-      return; // Prevent starting if no content
+      return;
     }
     onClick();
   };
@@ -143,8 +137,7 @@ export const StatusButton = ({ onClick, disabled, className = '' }: StatusButton
       <button
         className={`${getButtonStyles()} ${className}`}
         onClick={handleClick}
-        disabled={disabled ||
-                 ['connecting', 'error'].includes(buttonState) ||
+        disabled={['connecting', 'error'].includes(buttonState) ||
                  (!hasContent && buttonState === 'ready')}
         data-tooltip-id="status-tooltip"
         data-tooltip-content={getTooltipContent()}
