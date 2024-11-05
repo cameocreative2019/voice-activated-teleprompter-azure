@@ -1,7 +1,16 @@
 import { useEffect, useRef, useLayoutEffect } from "react"
 import { escape } from "html-escaper"
 import { useAppDispatch, useAppSelector } from "../../app/hooks"
-import { setContent, setFinalTranscriptIndex, setInterimTranscriptIndex } from "./contentSlice"
+import {
+  setContent,
+  setFinalTranscriptIndex,
+  setInterimTranscriptIndex,
+  PLACEHOLDER_TEXT,
+  selectRawText,
+  selectTextElements,
+  selectFinalTranscriptIndex,
+  selectInterimTranscriptIndex,
+} from "./contentSlice"
 import { selectSavedPosition, setSavedPosition } from "../scroll/scrollSlice"
 
 import {
@@ -13,13 +22,6 @@ import {
   selectOpacity,
   selectReadLinePosition,
 } from "../navbar/navbarSlice"
-
-import {
-  selectRawText,
-  selectTextElements,
-  selectFinalTranscriptIndex,
-  selectInterimTranscriptIndex,
-} from "./contentSlice"
 
 interface Padding {
   top: number;
@@ -218,7 +220,8 @@ export const Content = () => {
           className={`content ${status === "editorMode" ? "editor-mode" : ""}`}
           style={getStyles()}
           value={rawText}
-          onChange={e => dispatch(setContent(e.target.value || ""))}
+          onChange={e => dispatch(setContent(e.target.value))}
+          placeholder={PLACEHOLDER_TEXT}
           spellCheck={false}
         />
       ) : (
@@ -227,36 +230,42 @@ export const Content = () => {
           ref={containerRef}
           style={getStyles()}
         >
-          {textElements.map((textElement, index, array) => {
-            const itemProps =
-              interimTranscriptIndex > 0 &&
-              index === Math.min(interimTranscriptIndex + 2, array.length - 1)
-                ? { ref: lastRef }
-                : {};
+          {rawText ? (
+            textElements.map((textElement, index, array) => {
+              const itemProps =
+                interimTranscriptIndex > 0 &&
+                index === Math.min(interimTranscriptIndex + 2, array.length - 1)
+                  ? { ref: lastRef }
+                  : {};
 
-            return (
-              <span
-                key={textElement.index}
-                onClick={() => {
-                  void dispatch(setFinalTranscriptIndex(index));
-                  void dispatch(setInterimTranscriptIndex(index));
-                }}
-                className={
-                  finalTranscriptIndex > 0 &&
-                  textElement.index < finalTranscriptIndex
-                    ? "final-transcript"
-                    : interimTranscriptIndex > 0 &&
-                      textElement.index <= interimTranscriptIndex + 1
-                    ? "interim-transcript"
-                    : "has-text-white"
-                }
-                {...itemProps}
-                dangerouslySetInnerHTML={{
-                  __html: escape(textElement.value).replace(/\n/g, "<br>"),
-                }}
-              />
-            );
-          })}
+              return (
+                <span
+                  key={textElement.index}
+                  onClick={() => {
+                    void dispatch(setFinalTranscriptIndex(index));
+                    void dispatch(setInterimTranscriptIndex(index));
+                  }}
+                  className={
+                    finalTranscriptIndex > 0 &&
+                    textElement.index < finalTranscriptIndex
+                      ? "final-transcript"
+                      : interimTranscriptIndex > 0 &&
+                        textElement.index <= interimTranscriptIndex + 1
+                      ? "interim-transcript"
+                      : "has-text-white"
+                  }
+                  {...itemProps}
+                  dangerouslySetInnerHTML={{
+                    __html: escape(textElement.value).replace(/\n/g, "<br>"),
+                  }}
+                />
+              );
+            })
+          ) : (
+            <div className="placeholder-text">
+              {PLACEHOLDER_TEXT}
+            </div>
+          )}
         </div>
       )}
     </main>

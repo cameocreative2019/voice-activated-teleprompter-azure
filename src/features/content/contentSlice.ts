@@ -10,19 +10,21 @@ export interface ContentSliceState {
   interimTranscriptIndex: number
 }
 
-// Try to get the saved content from localStorage, fall back to default if none exists
+export const PLACEHOLDER_TEXT = 'Click on the Editor button and paste your content here...'
+
+// Try to get the saved content from localStorage
 const getSavedContent = () => {
   const savedContent = localStorage.getItem('scriptContent')
-  return savedContent || 'Click on the Editor button and paste your content here...'
+  return savedContent || ''
 }
 
 const initialText = getSavedContent()
 
 const initialState: ContentSliceState = {
   rawText: initialText,
-  textElements: tokenize(initialText),
+  textElements: tokenize(initialText || ''),
   finalTranscriptIndex: -1,
-  interimTranscriptIndex: -1,
+  interimTranscriptIndex: -1
 }
 
 export const contentSlice = createAppSlice({
@@ -32,17 +34,23 @@ export const contentSlice = createAppSlice({
 
   reducers: create => ({
     setContent: create.reducer((state, action: PayloadAction<string>) => {
-      state.rawText = action.payload
+      const newContent = action.payload
+      state.rawText = newContent
+      state.textElements = tokenize(newContent)
       state.finalTranscriptIndex = -1
       state.interimTranscriptIndex = -1
-      // Save to localStorage whenever content changes
-      localStorage.setItem('scriptContent', action.payload)
+
+      // Only save non-empty content to localStorage
+      if (newContent.trim()) {
+        localStorage.setItem('scriptContent', newContent)
+      } else {
+        localStorage.removeItem('scriptContent')
+      }
     }),
 
     clearContent: create.reducer(state => {
-      const defaultText = 'Click on the Editor button and paste your content here...'
-      state.rawText = defaultText
-      state.textElements = tokenize(defaultText)
+      state.rawText = ''
+      state.textElements = []
       state.finalTranscriptIndex = -1
       state.interimTranscriptIndex = -1
       localStorage.removeItem('scriptContent')
@@ -80,12 +88,13 @@ export const contentSlice = createAppSlice({
     selectTextElements: state => state.textElements,
     selectFinalTranscriptIndex: state => state.finalTranscriptIndex,
     selectInterimTranscriptIndex: state => state.interimTranscriptIndex,
+    selectHasContent: state => state.rawText.trim().length > 0
   },
 })
 
 export const {
   setContent,
-  clearContent, // Added clearContent to exports
+  clearContent,
   setFinalTranscriptIndex,
   setInterimTranscriptIndex,
   resetTranscriptionIndices,
@@ -96,4 +105,5 @@ export const {
   selectTextElements,
   selectFinalTranscriptIndex,
   selectInterimTranscriptIndex,
+  selectHasContent
 } = contentSlice.selectors

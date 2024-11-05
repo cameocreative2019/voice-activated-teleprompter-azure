@@ -977,3 +977,23 @@ div.content {
     margin-right: 0; // Remove default margin as we're using gap
   }
 }
+
+.content .placeholder-text {
+  opacity: 0.5;
+  color: #ffffff;
+  cursor: text;
+  user-select: none;
+}
+
+.content-placeholder {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  color: #ffffff;
+  user-select: none;
+}
+
+.content-wrapper {
+  position: relative;
+  height: 100%;
+}
+

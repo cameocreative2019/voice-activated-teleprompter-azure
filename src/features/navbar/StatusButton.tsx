@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Loader, X, Play, Square } from 'lucide-react';
 import { Tooltip } from 'react-tooltip';
+import { useAppSelector } from '../../app/hooks';
+import { selectHasContent } from '../content/contentSlice';
 
 export type ButtonState = 'connecting' | 'error' | 'ready' | 'starting' | 'active';
 
@@ -12,6 +14,7 @@ interface StatusButtonProps {
 
 export const StatusButton = ({ onClick, disabled, className = '' }: StatusButtonProps) => {
   const [buttonState, setButtonState] = useState<ButtonState>('connecting');
+  const hasContent = useAppSelector(selectHasContent);
 
   // Monitor console logs for state changes
   useEffect(() => {
@@ -113,6 +116,10 @@ export const StatusButton = ({ onClick, disabled, className = '' }: StatusButton
   };
 
   const getTooltipContent = () => {
+    if (!hasContent && buttonState === 'ready') {
+      return 'Add content to begin';
+    }
+
     switch (buttonState) {
       case 'connecting':
       case 'starting':
@@ -124,12 +131,21 @@ export const StatusButton = ({ onClick, disabled, className = '' }: StatusButton
     }
   };
 
+  const handleClick = () => {
+    if (!hasContent && buttonState === 'ready') {
+      return; // Prevent starting if no content
+    }
+    onClick();
+  };
+
   return (
     <>
       <button
         className={`${getButtonStyles()} ${className}`}
-        onClick={onClick}
-        disabled={disabled || ['connecting', 'error'].includes(buttonState)}
+        onClick={handleClick}
+        disabled={disabled ||
+                 ['connecting', 'error'].includes(buttonState) ||
+                 (!hasContent && buttonState === 'ready')}
         data-tooltip-id="status-tooltip"
         data-tooltip-content={getTooltipContent()}
       >
