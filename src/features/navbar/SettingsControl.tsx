@@ -40,6 +40,7 @@ const SettingsControl: React.FC<SettingsControlProps> = ({
     <div className="slider">
       <div className="slider-label-group">
         <span className="slider-label">{label}</span>
+        <span className="label-spacer">&nbsp;</span>
         <button
           onClick={reset}
           className="reset-button"

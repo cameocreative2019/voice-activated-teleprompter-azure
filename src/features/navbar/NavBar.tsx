@@ -5,6 +5,7 @@ import { StatusButton } from './StatusButton'
 import { MicrophoneButton } from "../microphone/MicrophoneButton"
 import { MicrophoneSelector } from "../microphone/MicrophoneSelector"
 import { setDevices, setError } from "../microphone/microphoneSlice"
+import { SettingsPanel } from "./SettingsPanel"
 import {
   toggleQuickEdit,
   toggleEditor,
@@ -23,7 +24,6 @@ import {
 } from "./navbarSlice"
 import { resetTranscriptionIndices, clearContent } from "../content/contentSlice"
 import { setSavedPosition } from "../scroll/scrollSlice"
-import SettingsControl from "./SettingsControl"
 
 // Default values remain the same
 const DEFAULT_VALUES = {
@@ -58,32 +58,32 @@ export const NavBar = () => {
 
   // Handle microphone device enumeration and monitoring
   useEffect(() => {
-  const updateDevices = async () => {
-    try {
-      // Request microphone permission first
-      await navigator.mediaDevices.getUserMedia({ audio: true });
-      const devices = await navigator.mediaDevices.enumerateDevices();
-      const audioInputs = devices.filter(device => device.kind === 'audioinput');
-      dispatch(setDevices({
-        devices: audioInputs,
-        currentStatus: status // Pass current status
-      }));
-    } catch (error) {
-      console.error('Microphone access error:', error);
-      dispatch(setError('Microphone access denied'));
-    }
-  };
+    const updateDevices = async () => {
+      try {
+        // Request microphone permission first
+        await navigator.mediaDevices.getUserMedia({ audio: true });
+        const devices = await navigator.mediaDevices.enumerateDevices();
+        const audioInputs = devices.filter(device => device.kind === 'audioinput');
+        dispatch(setDevices({
+          devices: audioInputs,
+          currentStatus: status
+        }));
+      } catch (error) {
+        console.error('Microphone access error:', error);
+        dispatch(setError('Microphone access denied'));
+      }
+    };
 
-  // Initial device enumeration
-  updateDevices();
+    // Initial device enumeration
+    updateDevices();
 
-  // Listen for device changes
-  navigator.mediaDevices.addEventListener('devicechange', updateDevices);
+    // Listen for device changes
+    navigator.mediaDevices.addEventListener('devicechange', updateDevices);
 
-  return () => {
-    navigator.mediaDevices.removeEventListener('devicechange', updateDevices);
-  };
-}, [dispatch, status]); // Add status to dependencies
+    return () => {
+      navigator.mediaDevices.removeEventListener('devicechange', updateDevices);
+    };
+  }, [dispatch, status]);
 
   useEffect(() => {
     const hasClickedButton = localStorage.getItem('hasClickedButton')
@@ -192,22 +192,6 @@ export const NavBar = () => {
               {status !== "started" && (
                 <>
                   <button
-                    className="button"
-                    disabled={status !== "stopped"}
-                    onClick={() => {
-                      handleAnyButtonClick()
-                      dispatch(resetTranscriptionIndices())
-                    }}
-                  >
-                    <span className="icon-text">
-                      <span className="icon is-small">
-                        <i className="fa-solid fa-arrows-rotate" />
-                      </span>
-                      <span>Restart</span>
-                    </span>
-                  </button>
-
-                  <button
                     className={`button ${status === "editing" ? "editing" : ""}`}
                     disabled={status === "editorMode"}
                     onClick={() => {
@@ -241,63 +225,44 @@ export const NavBar = () => {
                       <span>Editor</span>
                     </span>
                   </button>
-
-                  <MicrophoneButton
-                    onClick={() => {
-                      handleAnyButtonClick();
-                      setShowMicSelector(true);
-                    }}
-                  />
                 </>
               )}
             </div>
           </div>
 
           <div className="navbar-end">
-            <div
-              className={`settings-controls ${showSettings && status === "stopped" ? "visible" : ""}`}
-            >
-              {settingsControls.map((control, index) => (
-                <SettingsControl
-                  key={index}
-                  {...control}
-                />
-              ))}
-
-              <div className="settings-spacer"></div>
-
-              <button
-                className="button clear-storage-btn"
-                onClick={handleClearAll}
-                disabled={status !== "stopped"}
-              >
-                <span className="icon-text">
-                  <span className="icon is-small">
-                    <i className="fa-solid fa-trash" />
-                  </span>
-                  <span>Reset Page</span>
-                </span>
-              </button>
-            </div>
-
-            {status !== "started" && (
-              <div className="navbar-item">
-                <button
-                  className={`button ${showSettings ? "is-active" : ""}`}
-                  onClick={() => dispatch(toggleSettings())}
-                  disabled={status !== "stopped"}
-                >
-                  <span className="icon-text">
-                    <span className="icon is-small">
-                      <i className="fa-solid fa-gear" />
+            <div className="microphone-settings-group">
+              {status !== "started" && (
+                <>
+                  <MicrophoneButton
+                    onClick={() => {
+                      handleAnyButtonClick();
+                      setShowMicSelector(true);
+                    }}
+                  />
+                  <button
+                    className={`button ${showSettings ? "is-active" : ""}`}
+                    onClick={() => dispatch(toggleSettings())}
+                    disabled={status !== "stopped"}
+                  >
+                    <span className="icon-text">
+                      <span className="icon is-small">
+                        <i className="fa-solid fa-gear" />
+                      </span>
+                      <span>Settings</span>
                     </span>
-                    <span>Settings</span>
-                  </span>
-                </button>
-              </div>
-            )}
+                  </button>
+                </>
+              )}
+            </div>
           </div>
         </div>
+
+        <SettingsPanel
+          isVisible={showSettings && status === "stopped"}
+          settingsControls={settingsControls}
+          onClearAll={handleClearAll}
+        />
       </nav>
 
       <MicrophoneSelector
