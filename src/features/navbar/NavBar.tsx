@@ -233,22 +233,20 @@ export const NavBar = () => {
                 onClick={status === "started" ? handleStop : handleStart}
               />
 
-              {status === "stopped" && (
-                <button
-                  className="button"
-                  onClick={handleRestart}
-                >
-                  <span className="icon-text">
-                    <span className="icon is-small">
-                      <RotateCcw size={16} />
-                    </span>
-                    <span>Restart</span>
-                  </span>
-                </button>
-              )}
-
               {status !== "started" && (
                 <>
+                  <button
+                    className="button"
+                    onClick={handleRestart}
+                  >
+                    <span className="icon-text">
+                      <span className="icon is-small">
+                        <RotateCcw size={16} />
+                      </span>
+                      <span>Restart</span>
+                    </span>
+                  </button>
+
                   <button
                     className={`button ${status === "editing" ? "editing" : ""}`}
                     onClick={() => handleQuickEdit()}
